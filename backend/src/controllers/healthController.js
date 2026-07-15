@@ -11,12 +11,26 @@ const health = async (_req, res, next) => {
       database = "unavailable";
     }
 
-    return sendSuccess(res, "Health check successful", {
-      status: "ok",
+    const data = {
+      status: database === "connected" ? "ok" : "degraded",
+      application: database === "connected" ? "UP" : "DEGRADED",
       timestamp: new Date().toISOString(),
       environment: env.nodeEnv,
-      database,
-    });
+      version: env.appVersion,
+      uptimeSeconds: Math.round(process.uptime()),
+      database: database === "connected" ? "UP" : "DOWN",
+    };
+
+    if (database !== "connected") {
+      return res.status(503).json({
+        success: false,
+        message: "Health check degraded",
+        data,
+        statusCode: 503,
+      });
+    }
+
+    return sendSuccess(res, "Health check successful", data);
   } catch (error) {
     return next(error);
   }

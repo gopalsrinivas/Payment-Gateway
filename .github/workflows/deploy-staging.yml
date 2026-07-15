@@ -1,0 +1,29 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Immutable image tag, for example sha-abc123
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      STAGING_HOST: ${{ secrets.STAGING_HOST }}
+      STAGING_USER: ${{ secrets.STAGING_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployment configuration
+        run: |
+          if [ -z "$STAGING_HOST" ] || [ -z "$STAGING_USER" ]; then
+            echo "Staging deployment is not configured. Add STAGING_HOST, STAGING_USER, SSH key, and environment secrets before enabling deployment."
+            exit 0
+          fi
+          echo "Staging target is configured; wire SSH deployment commands after approval for the actual VM."
+          exit 1

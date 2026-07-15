@@ -6523,3 +6523,1839 @@ Do not make unrelated changes.
 Do not implement Part 6.
 
 Do not start production deployment.
+
+
+Part-6 → DevOps
+---------------
+Read these files completely before making any changes:
+
+1. `docs/Part-6-DevOps-Payment-Gateway.md`
+2. `docs/Codex-Prompt-Part-6-DevOps-Payment-Gateway.md`
+
+Continue from the completed Part 1, Part 2, Part 3, Part 4, and Part 5 implementation.
+
+Implement ONLY Part 6: DevOps, containerization hardening, CI/CD, security scanning, deployment foundation, monitoring, backups, rollback, and operational documentation.
+
+Project root:
+
+```text
+D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+Do not create another nested project folder.
+
+---
+
+# Existing Implementation
+
+## Part 1 Completed
+
+* Backend and frontend foundation
+* PostgreSQL and Sequelize configuration
+* Authentication
+* JWT
+* Role authorization
+* Logging
+* Swagger
+* Docker foundation
+* Health API
+* Tests
+
+## Part 2 Completed
+
+* Complete database schema
+* Audit fields
+* Soft delete
+* Models
+* Associations
+* Migrations
+* Constraints
+* Indexes
+* Seed data
+* Database tests
+
+## Part 3 Completed
+
+* Product APIs
+* Cart APIs
+* Order APIs
+* Payment read APIs
+* Payment logs
+* Dashboards
+* Search
+* Filtering
+* Sorting
+* Pagination
+* Ownership and authorization
+* Swagger and Postman
+* API tests
+
+## Part 4 Completed
+
+* Customer Panel
+* Admin Panel
+* Role-based layouts
+* Product pages
+* Cart
+* Checkout UI
+* Orders
+* Payments
+* Dashboards
+* Profile
+* Responsive frontend
+* Frontend tests
+* Production build
+
+## Part 5 Completed
+
+* Razorpay Test Mode configuration
+* Razorpay Order creation
+* Checkout.js integration
+* Backend signature verification
+* Payment failure handling
+* Webhook verification
+* Idempotency
+* Payment logs
+* Payment and Order synchronization
+* Tests
+* Swagger and Postman updates
+
+Preserve all working functionality from Parts 1 to 5.
+
+---
+
+# Scope
+
+Implement only DevOps and operational improvements for:
+
+* Backend production Docker image
+* Frontend production Docker image
+* PostgreSQL service configuration
+* Docker Compose development setup
+* Docker Compose production foundation
+* Environment variable management
+* Health checks
+* Database readiness
+* Database migration strategy
+* CI pipeline
+* Security scanning
+* Dependency scanning
+* Secret scanning
+* CodeQL
+* Trivy
+* Docker image validation
+* Optional container registry publishing
+* Deployment foundation
+* Reverse proxy foundation
+* HTTPS guidance
+* Logging
+* Monitoring
+* Backups
+* Restore procedure
+* Rollback
+* Graceful shutdown
+* Smoke tests
+* Runbook
+* Documentation
+
+Do not implement live production deployment unless valid credentials and deployment targets are already configured.
+
+Do not fake a successful deployment.
+
+---
+
+# Important Restrictions
+
+* Do not modify business logic.
+* Do not modify API contracts.
+* Do not modify database schema unless required for a real DevOps-related issue.
+* Explain any schema change before applying it.
+* Do not remove working Docker support.
+* Do not hardcode secrets.
+* Do not commit real `.env` files.
+* Do not put Razorpay secrets in frontend images.
+* Do not expose database passwords.
+* Do not use Razorpay Live Mode.
+* Do not run real payments in CI.
+* Do not run destructive database commands automatically.
+* Do not use `sequelize.sync()`.
+* Do not claim cloud deployment passed unless it was actually performed.
+* Do not create fake cloud credentials.
+* Do not start another application phase.
+* Do not introduce unnecessary enterprise complexity.
+
+---
+
+# Primary Deployment Strategy
+
+Use this as the primary deployment foundation:
+
+```text
+Linux VM
+→ Docker Engine
+→ Docker Compose
+→ Reverse Proxy
+→ Backend Container
+→ Frontend Container
+→ PostgreSQL Container or Managed PostgreSQL
+```
+
+For interview readiness, support:
+
+```text
+Docker Compose on a Linux VM
+```
+
+Alternative deployment options may be documented:
+
+* Azure App Service / Container Apps
+* AWS ECS or EC2
+* Render
+* Railway
+* DigitalOcean
+* Other managed container platforms
+
+Do not implement multiple deployment systems unless required.
+
+Keep one primary working path and document alternatives.
+
+---
+
+# Docker Architecture
+
+Expected services:
+
+```text
+postgres
+backend
+frontend
+reverse-proxy
+```
+
+The reverse proxy may be included only if implemented safely.
+
+Expected flow:
+
+```text
+User
+→ HTTPS Reverse Proxy
+→ Frontend
+→ Backend API
+→ PostgreSQL
+→ Razorpay Test Mode
+```
+
+Razorpay webhook flow:
+
+```text
+Razorpay
+→ Public HTTPS URL
+→ Reverse Proxy
+→ Backend Webhook Endpoint
+→ Signature Verification
+→ PostgreSQL
+```
+
+---
+
+# Backend Dockerfile
+
+Inspect the existing backend Dockerfile.
+
+Improve it for production using a multi-stage build where useful.
+
+Requirements:
+
+* Use a supported Node.js LTS image.
+* Do not use Node 26 unless project compatibility is verified.
+* Prefer a stable LTS version such as Node 22 if compatible.
+* Use a small official image.
+* Set `NODE_ENV=production`.
+* Install only production dependencies in the final image.
+* Use `npm ci`.
+* Use lockfile.
+* Run as a non-root user.
+* Copy only required files.
+* Exclude logs, tests, local `.env`, and unnecessary files.
+* Add a health check where appropriate.
+* Expose only the required port.
+* Support graceful shutdown.
+* Avoid storing secrets in image layers.
+* Avoid running migrations automatically on every application process start unless explicitly designed.
+* Do not run seeders in production automatically.
+
+Expected backend command:
+
+```text
+node src/server.js
+```
+
+or the existing production start command.
+
+---
+
+# Frontend Dockerfile
+
+Inspect the existing frontend Dockerfile.
+
+Improve it for Next.js production.
+
+Requirements:
+
+* Use multi-stage build.
+* Use a supported Node.js LTS image.
+* Use `npm ci`.
+* Run `next build`.
+* Use Next.js standalone output if appropriate.
+* Copy only required runtime files.
+* Run as non-root.
+* Use production environment.
+* Exclude source secrets.
+* Do not put Razorpay Key Secret or Webhook Secret in build arguments.
+* Only public environment variables may be exposed.
+* Add health check where appropriate.
+* Expose only the frontend port.
+* Preserve source maps according to documented policy.
+* Avoid shipping development dependencies where possible.
+
+If using standalone output, verify `next.config.mjs` supports it.
+
+---
+
+# Docker Ignore
+
+Create or improve:
+
+```text
+backend/.dockerignore
+frontend/.dockerignore
+```
+
+Exclude:
+
+```text
+node_modules
+npm-debug.log
+.env
+.env.*
+logs
+coverage
+.git
+.github
+tests
+.next
+Dockerfile*
+README files where unnecessary
+```
+
+Do not accidentally exclude required production files.
+
+Preserve `.env.example`.
+
+---
+
+# Docker Compose Development
+
+Create or improve the existing:
+
+```text
+docker-compose.yml
+```
+
+Services:
+
+```text
+postgres
+backend
+frontend
+```
+
+Requirements:
+
+* Shared network
+* Named PostgreSQL volume
+* Health checks
+* Dependency conditions where supported
+* Correct service hostnames
+* Backend connects to `postgres`, not `localhost`
+* Frontend connects to backend correctly
+* Environment variables loaded safely
+* Restart policy appropriate for development
+* Port mappings documented
+* No real secrets
+* Preserve local development outside Docker
+* Avoid mounting `node_modules` incorrectly
+* Avoid hiding container dependencies through host mounts
+
+Do not use Docker as the only local development path.
+
+---
+
+# Production Compose Foundation
+
+Create or improve:
+
+```text
+docker-compose.prod.yml
+```
+
+Expected services:
+
+```text
+postgres
+backend
+frontend
+reverse-proxy
+```
+
+Requirements:
+
+* Production images
+* No source-code bind mounts
+* Restart policies
+* Health checks
+* Read-only filesystem where practical
+* `no-new-privileges` where practical
+* Named volumes
+* Environment file references
+* Resource limits where supported
+* Log rotation
+* Internal network separation where useful
+* Only reverse proxy ports exposed publicly
+* PostgreSQL not publicly exposed
+* Backend optionally internal-only
+* Secrets not committed
+* Clear deployment documentation
+
+Do not include fake secrets.
+
+Use placeholders only in example files.
+
+---
+
+# Environment Management
+
+Create or improve:
+
+```text
+.env.example
+backend/.env.example
+frontend/.env.example
+.env.production.example
+```
+
+Document required variables.
+
+Root variables may include:
+
+```env
+POSTGRES_DB=payment_gateway_demo
+POSTGRES_USER=gopal
+POSTGRES_PASSWORD=replace_with_secure_password
+
+BACKEND_PORT=5000
+FRONTEND_PORT=3000
+
+BACKEND_IMAGE=payment-gateway-backend
+FRONTEND_IMAGE=payment-gateway-frontend
+IMAGE_TAG=latest
+```
+
+Backend variables:
+
+```env
+NODE_ENV=production
+PORT=5000
+
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=payment_gateway_demo
+DB_USER=gopal
+DB_PASSWORD=replace_with_secure_password
+
+JWT_SECRET=replace_with_long_random_secret
+JWT_EXPIRES_IN=1d
+
+RAZORPAY_KEY_ID=replace_with_test_key_id
+RAZORPAY_KEY_SECRET=replace_with_test_key_secret
+RAZORPAY_WEBHOOK_SECRET=replace_with_webhook_secret
+
+CORS_ORIGIN=https://example.com
+LOG_LEVEL=info
+```
+
+Frontend variables:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://example.com/api/v1
+NEXT_PUBLIC_RAZORPAY_KEY_ID=replace_with_test_key_id
+```
+
+Rules:
+
+* Do not commit real `.env`.
+* Do not expose backend secrets in frontend variables.
+* Do not print environment values in logs.
+* Fail clearly when required production variables are missing.
+* Use placeholders only in examples.
+
+---
+
+# Database Readiness
+
+Implement a safe database readiness strategy.
+
+Possible approach:
+
+```text
+Backend startup
+→ Retry PostgreSQL connection
+→ Start HTTP server only after connection succeeds
+```
+
+or use an explicit startup script.
+
+Requirements:
+
+* Limited retry count
+* Exponential or fixed retry delay
+* Clear safe logs
+* Do not log passwords
+* Fail after configured retries
+* Do not loop forever silently
+* Preserve local development behavior
+
+Do not replace migrations with automatic schema synchronization.
+
+---
+
+# Migration Strategy
+
+Production migration strategy must be explicit.
+
+Recommended:
+
+```text
+Deployment
+→ Start PostgreSQL
+→ Run one migration job
+→ Confirm success
+→ Start backend
+→ Start frontend
+```
+
+Implement or document commands such as:
+
+```cmd
+docker compose -f docker-compose.prod.yml run --rm backend npm run db:migrate
+```
+
+Requirements:
+
+* Migrations run once.
+* Migrations must complete before new application version receives traffic.
+* Do not run seeders automatically in production.
+* Development seeders remain optional.
+* Migration failure should stop deployment.
+* Document rollback limitations.
+* Avoid concurrent migration execution by multiple backend replicas.
+
+Do not automatically undo migrations on deployment failure.
+
+---
+
+# Seed Strategy
+
+Development:
+
+* Admin role
+* Customer role
+* Demo admin
+* Sample products
+
+Production:
+
+* Roles may be seeded through an explicit controlled step.
+* Demo users must not be created automatically.
+* Sample products must not be inserted automatically.
+* Default Admin credentials must not be used in production.
+
+Document production-safe bootstrap steps.
+
+---
+
+# Health Checks
+
+Backend health endpoint:
+
+```text
+GET /api/v1/health
+```
+
+Should report:
+
+* Application status
+* Environment
+* Timestamp
+* Database connectivity
+
+Do not expose:
+
+* Passwords
+* Secrets
+* Full connection strings
+* Internal stack traces
+
+Frontend health check may use:
+
+```text
+/
+```
+
+or a lightweight route if available.
+
+PostgreSQL health check:
+
+```text
+pg_isready
+```
+
+Docker Compose health checks must use these.
+
+---
+
+# Graceful Shutdown
+
+Review backend server shutdown behavior.
+
+Handle:
+
+```text
+SIGTERM
+SIGINT
+```
+
+Required flow:
+
+```text
+Stop accepting new requests
+→ Close HTTP server
+→ Close Sequelize connection
+→ Flush safe logs
+→ Exit process
+```
+
+Requirements:
+
+* Log shutdown start and completion.
+* Use a shutdown timeout.
+* Avoid hanging indefinitely.
+* Avoid abruptly terminating database transactions where possible.
+* Do not expose secrets.
+
+Add tests or documented manual verification where practical.
+
+---
+
+# CI/CD Platform
+
+Use GitHub Actions.
+
+Create workflows under:
+
+```text
+.github/workflows/
+```
+
+Recommended workflows:
+
+```text
+ci.yml
+security.yml
+docker-build.yml
+deploy-staging.yml
+```
+
+Avoid excessive workflow fragmentation if a smaller set is clearer.
+
+---
+
+# CI Workflow
+
+Trigger on:
+
+```text
+push
+pull_request
+```
+
+Target branches:
+
+```text
+main
+develop
+```
+
+Adapt to actual repository strategy.
+
+CI jobs should include:
+
+## Backend
+
+* Checkout
+* Setup Node LTS
+* Cache npm dependencies
+* `npm ci`
+* Backend lint
+* Backend tests
+* Optional test PostgreSQL service
+* Run migrations against test database
+* Do not call Razorpay APIs
+
+## Frontend
+
+* `npm ci`
+* Frontend lint
+* Frontend tests
+* Frontend production build
+
+## Docker
+
+* Validate Docker Compose
+* Build backend image
+* Build frontend image
+* Optionally run basic container smoke checks
+
+Requirements:
+
+* Fail fast on errors.
+* Do not use real secrets.
+* Use fake or mocked Razorpay values for tests where required.
+* Do not run live payments.
+* Do not deploy from pull requests.
+* Pin action major versions.
+* Use minimal permissions.
+
+---
+
+# PostgreSQL CI Service
+
+Use a GitHub Actions PostgreSQL service where backend tests require a real database.
+
+Example values must be test-only.
+
+Use:
+
+```text
+POSTGRES_DB=payment_gateway_test
+POSTGRES_USER=test_user
+POSTGRES_PASSWORD=test_password
+```
+
+Requirements:
+
+* Wait for database readiness.
+* Run all migrations.
+* Run tests.
+* Clean up automatically after the job.
+* Do not use production credentials.
+* Do not use the development database.
+
+---
+
+# Frontend Build
+
+The CI workflow must run:
+
+```cmd
+npm run build
+```
+
+The build must be considered passed only when the command exits successfully.
+
+Do not rely on a time-limited manual observation.
+
+Use supported Node LTS.
+
+If Next.js build hangs under one Node version, investigate compatibility and pin a working LTS version.
+
+Document the selected Node version in:
+
+```text
+.nvmrc
+```
+
+or:
+
+```text
+.node-version
+```
+
+and `package.json` engines where appropriate.
+
+---
+
+# CodeQL
+
+Create CodeQL analysis for JavaScript/TypeScript.
+
+Requirements:
+
+* Run on push, pull request, and scheduled basis where appropriate.
+* Use minimal permissions.
+* Analyze backend and frontend.
+* Do not block development unnecessarily for unsupported generated files.
+* Exclude dependencies and build outputs naturally.
+* Document where results appear.
+
+---
+
+# Dependency Scanning
+
+Use:
+
+```text
+npm audit
+Dependabot
+```
+
+Create:
+
+```text
+.github/dependabot.yml
+```
+
+Configure for:
+
+* Backend npm
+* Frontend npm
+* GitHub Actions
+* Docker where supported
+
+Do not automatically run `npm audit fix --force`.
+
+Document:
+
+* Vulnerability severity
+* Direct vs transitive dependency
+* Breaking-change review
+* Upgrade testing requirement
+
+---
+
+# Trivy Scanning
+
+Add Trivy scans for:
+
+* Repository filesystem
+* Backend Docker image
+* Frontend Docker image
+
+Requirements:
+
+* Scan HIGH and CRITICAL vulnerabilities.
+* Ignore unfixed issues only when documented.
+* Produce readable output.
+* Optionally upload SARIF to GitHub Security.
+* Do not fail the pipeline on every low-severity issue.
+* Document remediation process.
+
+---
+
+# Secret Scanning
+
+Implement secret scanning.
+
+Use:
+
+* GitHub secret scanning where available
+* Gitleaks or TruffleHog in CI if appropriate
+
+Scan:
+
+* Repository
+* Git history where practical
+* Docker build context
+
+Exclude safe placeholder examples only through precise rules.
+
+Do not suppress real findings broadly.
+
+Confirm that:
+
+```text
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+JWT_SECRET
+DB_PASSWORD
+```
+
+real values are not committed.
+
+---
+
+# Docker Build Workflow
+
+Create a workflow to build images.
+
+Tags may include:
+
+```text
+latest
+branch name
+commit SHA
+semantic version tag
+```
+
+Prefer immutable tags:
+
+```text
+sha-<commit>
+```
+
+Requirements:
+
+* Build backend and frontend separately.
+* Use Docker Buildx.
+* Use layer caching where appropriate.
+* Do not publish images unless registry credentials are configured.
+* Do not claim publishing succeeded when credentials are absent.
+* Validate images even if not pushed.
+
+Optional registries:
+
+* GitHub Container Registry
+* Docker Hub
+* Azure Container Registry
+* AWS ECR
+
+Choose one only if configured.
+
+---
+
+# Image Publishing
+
+If GitHub Container Registry is used:
+
+```text
+ghcr.io/<owner>/payment-gateway-backend
+ghcr.io/<owner>/payment-gateway-frontend
+```
+
+Requirements:
+
+* Push only from trusted branches/tags.
+* Use `GITHUB_TOKEN` with minimal permissions.
+* Do not push from pull requests.
+* Use immutable tags.
+* Document image pull commands.
+
+If registry setup is not available, keep build-only workflow and report publishing as not configured.
+
+---
+
+# Staging Deployment Workflow
+
+Create a protected staging deployment workflow only if it can remain safe without fake credentials.
+
+Possible trigger:
+
+```text
+workflow_dispatch
+```
+
+or:
+
+```text
+push to main
+```
+
+Requirements:
+
+* Use GitHub Environment protection.
+* Use environment secrets.
+* Do not expose secrets in logs.
+* Run migrations before application restart.
+* Run smoke tests after deployment.
+* Roll back application image if smoke tests fail.
+* Do not automatically roll back database migrations.
+* Report deployment as not configured if target details are absent.
+
+Do not create a fake successful SSH deployment.
+
+---
+
+# Linux VM Deployment Foundation
+
+Document a practical deployment to Ubuntu Linux VM.
+
+Required prerequisites:
+
+```text
+Ubuntu
+Docker Engine
+Docker Compose plugin
+Git or registry access
+Domain name
+HTTPS certificate
+Firewall
+```
+
+Document steps:
+
+1. Provision server.
+2. Create deployment user.
+3. Install Docker.
+4. Configure firewall.
+5. Copy environment file securely.
+6. Pull repository or images.
+7. Start PostgreSQL.
+8. Run migrations.
+9. Start backend/frontend/reverse proxy.
+10. Verify health.
+11. Configure HTTPS.
+12. Configure Razorpay webhook URL.
+13. Run smoke tests.
+14. Monitor logs.
+
+Do not include real IPs, passwords, or tokens.
+
+---
+
+# Reverse Proxy
+
+Use Nginx or Caddy if included.
+
+Preferred behavior:
+
+```text
+https://example.com
+→ frontend
+
+https://example.com/api/
+→ backend
+
+https://example.com/api-docs/
+→ backend Swagger
+
+https://example.com/api/v1/webhooks/razorpay
+→ backend raw webhook route
+```
+
+Requirements:
+
+* Preserve raw request body behavior for webhook route.
+* Set proxy headers.
+* Support HTTPS.
+* Set reasonable timeouts.
+* Limit request body size.
+* Do not cache authenticated API responses.
+* Do not expose PostgreSQL.
+* Add security headers where appropriate.
+* Preserve client IP safely.
+* Document CORS changes for same-domain deployment.
+
+Do not break Razorpay webhook signature verification.
+
+---
+
+# HTTPS
+
+Document:
+
+* Domain DNS
+* Let’s Encrypt
+* Certificate renewal
+* HTTP-to-HTTPS redirect
+* TLS configuration
+* Secure cookies if authentication later moves to cookies
+
+Do not claim HTTPS configured unless tested.
+
+---
+
+# CORS
+
+Production CORS should allow only approved frontend origins.
+
+Example:
+
+```text
+https://payment.example.com
+```
+
+Requirements:
+
+* No wildcard origin with credentials.
+* Environment-based origin list.
+* Development localhost allowed only in development.
+* Webhook route should not depend on browser CORS.
+
+---
+
+# Logging
+
+Backend already uses Winston.
+
+Improve operational logging where needed.
+
+Requirements:
+
+* Structured JSON logs in production
+* Human-readable logs in development
+* Request IDs
+* User ID where available
+* Order ID
+* Payment ID
+* Razorpay IDs where safe
+* Error category
+* HTTP method/path/status
+* Duration where practical
+
+Do not log:
+
+* Passwords
+* JWT tokens
+* Razorpay secrets
+* Full signatures
+* Card data
+* Full sensitive webhook payloads
+
+Support stdout logging for containers.
+
+Do not depend only on files inside containers.
+
+---
+
+# Docker Log Rotation
+
+Configure log rotation in production Compose.
+
+Example:
+
+```yaml
+logging:
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+```
+
+Use reasonable values.
+
+Avoid unlimited log growth.
+
+---
+
+# Monitoring
+
+Document or add foundation for:
+
+* Application health
+* Container health
+* CPU
+* Memory
+* Disk
+* PostgreSQL connections
+* HTTP error rate
+* API latency
+* Failed payment rate
+* Webhook failures
+* Payment initialization failures
+
+Possible options:
+
+* Docker health checks
+* Uptime monitoring
+* Prometheus/Grafana
+* Azure Monitor
+* AWS CloudWatch
+* Sentry
+
+Do not add a heavy monitoring stack unless justified.
+
+For this project, implement lightweight health and log-based monitoring guidance.
+
+---
+
+# Alerting
+
+Document alerts for:
+
+* Backend unhealthy
+* Frontend unavailable
+* Database unavailable
+* Disk space low
+* High HTTP 5xx rate
+* Repeated webhook verification failures
+* Payment failure spike
+* Migration failure
+* Backup failure
+* Certificate expiration
+
+Do not claim alerts are active unless configured.
+
+---
+
+# PostgreSQL Backups
+
+Implement or document backup scripts under:
+
+```text
+scripts/
+```
+
+Example files:
+
+```text
+scripts/backup-postgres.sh
+scripts/restore-postgres.sh
+scripts/verify-backup.sh
+```
+
+Optional Windows equivalents may be included where useful.
+
+Backup requirements:
+
+* Use `pg_dump`
+* Timestamped backup files
+* Configurable retention
+* Compression
+* Exit on errors
+* Do not print passwords
+* Support Docker Compose PostgreSQL
+* Document managed PostgreSQL alternatives
+* Protect backup files
+* Do not commit backups
+
+Add backup folders to `.gitignore`.
+
+---
+
+# Restore Procedure
+
+Document:
+
+1. Stop application writes.
+2. Verify backup file.
+3. Create restore database.
+4. Restore using `pg_restore` or `psql`.
+5. Run verification queries.
+6. Restart backend.
+7. Verify health.
+8. Verify sample data.
+9. Document recovery result.
+
+Do not overwrite production automatically.
+
+Require explicit database target.
+
+---
+
+# Backup Verification
+
+A backup is not valid until restore is tested.
+
+Provide a safe local verification process using a disposable database.
+
+Example:
+
+```text
+payment_gateway_restore_test
+```
+
+Do not disturb the main development database.
+
+---
+
+# Rollback Strategy
+
+Application rollback:
+
+```text
+Current image tag
+→ Previous known-good image tag
+→ Restart services
+→ Run health checks
+```
+
+Requirements:
+
+* Use immutable image tags.
+* Preserve previous image.
+* Document rollback command.
+* Run smoke tests.
+* Do not automatically undo migrations.
+* Document backward-compatible migration strategy.
+
+Database rollback:
+
+* Prefer forward-fix migrations.
+* Use migration undo only after review.
+* Take backup before destructive changes.
+* Do not run automatic rollback in CI/CD.
+
+---
+
+# Deployment Smoke Tests
+
+Create or improve a script such as:
+
+```text
+scripts/smoke-test.sh
+```
+
+Check:
+
+```text
+Frontend home returns 200
+Backend health returns 200
+Swagger returns 200 where enabled
+Public products returns 200
+Unauthorized profile returns 401
+```
+
+Do not perform real Razorpay payments.
+
+Optionally verify:
+
+* Login with a controlled test account in staging
+* Payment initialization only with mocked or isolated test data
+
+Avoid destructive data changes.
+
+---
+
+# Operations Runbook
+
+Create:
+
+```text
+docs/operations-runbook.md
+```
+
+Include:
+
+* Start services
+* Stop services
+* Restart services
+* View logs
+* Check health
+* Run migrations
+* Run development seeders
+* Backup database
+* Restore database
+* Rotate secrets
+* Renew certificates
+* Roll back application
+* Troubleshoot database connection
+* Troubleshoot frontend API URL
+* Troubleshoot Razorpay webhook
+* Troubleshoot payment initialization
+* Check disk space
+* Check container status
+
+Use exact commands.
+
+---
+
+# Secret Rotation
+
+Document safe rotation for:
+
+* JWT secret
+* Database password
+* Razorpay Key Secret
+* Razorpay Webhook Secret
+
+Explain impact.
+
+Examples:
+
+## JWT Secret
+
+* Existing tokens become invalid.
+* Users must log in again.
+
+## Database Password
+
+* Update database role.
+* Update environment secret.
+* Restart backend.
+* Verify connection.
+
+## Razorpay Key Secret
+
+* Update backend secret.
+* Restart backend.
+* Verify Test Mode order creation.
+
+## Webhook Secret
+
+* Update Razorpay dashboard.
+* Update backend secret.
+* Restart backend.
+* Send test webhook.
+
+Do not expose actual values.
+
+---
+
+# Swagger in Production
+
+Decide and document one:
+
+* Swagger enabled only in non-production
+* Swagger protected
+* Swagger available internally
+
+Do not expose sensitive examples.
+
+Do not include secrets.
+
+---
+
+# Security Hardening
+
+Review:
+
+* Helmet
+* CORS
+* Rate limiting
+* Request body limits
+* Non-root containers
+* Secret management
+* Database network exposure
+* HTTPS
+* Dependency vulnerabilities
+* Image vulnerabilities
+* Log sanitization
+* Webhook route
+* JWT expiration
+* Error responses
+
+Do not change working application behavior unnecessarily.
+
+Add rate limiting only if implemented consistently and tested.
+
+At minimum consider:
+
+* Login endpoint
+* Payment initialization
+* Payment verification
+* Webhook endpoint where appropriate
+
+Do not block valid Razorpay webhook retries through overly strict limits.
+
+---
+
+# CI Tests Must Include
+
+Backend:
+
+```text
+npm run lint
+npm test
+npm run db:migrate
+npm run db:migrate:status
+```
+
+Frontend:
+
+```text
+npm run lint
+npm test
+npm run build
+```
+
+Root:
+
+```text
+docker compose config
+docker build backend
+docker build frontend
+```
+
+Do not mark CI successful when a command times out.
+
+---
+
+# Required Files
+
+Create or improve where appropriate:
+
+```text
+.github/workflows/ci.yml
+.github/workflows/security.yml
+.github/workflows/docker-build.yml
+.github/workflows/deploy-staging.yml
+
+.github/dependabot.yml
+
+docker-compose.yml
+docker-compose.prod.yml
+
+backend/Dockerfile
+frontend/Dockerfile
+backend/.dockerignore
+frontend/.dockerignore
+
+scripts/backup-postgres.sh
+scripts/restore-postgres.sh
+scripts/verify-backup.sh
+scripts/smoke-test.sh
+
+docs/deployment.md
+docs/operations-runbook.md
+docs/backup-and-restore.md
+docs/security-and-secrets.md
+```
+
+Do not create empty placeholder files.
+
+If a workflow cannot work without user configuration, implement the safe structure and document required secrets.
+
+---
+
+# Tests and Verification
+
+Add tests or script verification for:
+
+* Backend Docker image builds
+* Frontend Docker image builds
+* Container runs as non-root where practical
+* Health checks work
+* Compose config valid
+* Environment placeholders safe
+* CI YAML valid
+* Backup script syntax valid
+* Smoke test script syntax valid
+* Secret scan finds no real secrets
+* Previous backend tests still pass
+* Previous frontend tests still pass
+* Frontend production build passes
+
+Do not run destructive restore against the main database.
+
+---
+
+# Manual Verification
+
+Local verification order:
+
+```text
+1. Local PostgreSQL
+2. Backend local
+3. Frontend local
+4. Automated tests
+5. Production builds
+6. Docker image builds
+7. Docker Compose development
+8. Production Compose validation
+9. Smoke tests
+10. Backup and disposable restore test
+```
+
+Do not use Docker as the only verification path.
+
+---
+
+# Before Making Changes
+
+1. Open:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+2. Run:
+
+```cmd
+git status
+```
+
+3. Inspect all current dirty files.
+4. Read both Part-6 documents completely.
+5. Inspect:
+
+   * Existing Dockerfiles
+   * Docker Compose
+   * `.dockerignore`
+   * `.gitignore`
+   * Package scripts
+   * Backend startup
+   * Database connection handling
+   * Graceful shutdown
+   * Health endpoint
+   * Environment files
+   * GitHub workflows
+   * Tests
+   * Logs
+   * README files
+6. Confirm Parts 1–5 tests pass.
+7. Confirm frontend build passes.
+8. Identify current Node version.
+9. Select and document supported Node LTS.
+10. Summarize implementation plan.
+11. List expected files to create or modify.
+12. Identify deployment limitations.
+13. Do not make deployment claims without evidence.
+
+---
+
+# After Implementation
+
+1. List all created files.
+2. List all modified files.
+3. Explain Docker architecture.
+4. Explain selected Node version.
+5. Explain migration strategy.
+6. Explain CI/CD workflow.
+7. Explain security scanning.
+8. Explain deployment foundation.
+9. Explain backup and restore.
+10. Explain rollback.
+11. Explain monitoring.
+12. Run backend lint.
+13. Run backend tests.
+14. Run migrations.
+15. Check migration status.
+16. Run frontend lint.
+17. Run frontend tests.
+18. Run frontend production build.
+19. Build backend Docker image.
+20. Build frontend Docker image.
+21. Validate development Compose.
+22. Validate production Compose.
+23. Start development Compose.
+24. Verify container health.
+25. Run smoke tests.
+26. Run secret scan.
+27. Run Trivy if available.
+28. Verify backup script.
+29. Perform disposable restore test where practical.
+30. Verify no secrets are exposed.
+31. Report registry publishing status.
+32. Report staging deployment status.
+33. Provide exact Windows CMD commands.
+34. Provide Linux deployment commands.
+35. List remaining manual steps.
+36. Do not start another phase.
+
+---
+
+# Suggested Local Commands
+
+Backend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
+
+npm install
+npm run lint
+npm test
+npm run db:migrate
+npm run db:migrate:status
+```
+
+Frontend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\frontend
+
+npm install
+npm run lint
+npm test
+npm run build
+```
+
+Root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+
+docker compose config
+docker compose -f docker-compose.prod.yml config
+
+docker build -t payment-gateway-backend:local ./backend
+docker build -t payment-gateway-frontend:local ./frontend
+```
+
+Start development Compose:
+
+```cmd
+docker compose up -d
+docker compose ps
+docker compose logs --tail=100 backend
+docker compose logs --tail=100 frontend
+docker compose logs --tail=100 postgres
+```
+
+Stop:
+
+```cmd
+docker compose down
+```
+
+Do not delete volumes unless explicitly requested:
+
+```cmd
+docker compose down -v
+```
+
+must not be run automatically.
+
+---
+
+# Suggested Linux Commands
+
+Example only:
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+
+docker compose -f docker-compose.prod.yml up -d postgres
+
+docker compose -f docker-compose.prod.yml run --rm backend npm run db:migrate
+
+docker compose -f docker-compose.prod.yml up -d backend frontend reverse-proxy
+
+docker compose -f docker-compose.prod.yml ps
+```
+
+Do not claim these commands were executed unless they actually were.
+
+---
+
+# Final Codex Output Format
+
+Provide:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Existing Parts 1 to 5 Preservation
+
+## Node Version
+
+## Backend Docker Image
+
+## Frontend Docker Image
+
+## Docker Ignore
+
+## Development Docker Compose
+
+## Production Docker Compose
+
+## Environment Management
+
+## Database Readiness
+
+## Migration Strategy
+
+## Seed Strategy
+
+## Health Checks
+
+## Graceful Shutdown
+
+## CI Pipeline
+
+## PostgreSQL CI Service
+
+## Frontend Build
+
+## Docker Build Workflow
+
+## Image Publishing
+
+## CodeQL
+
+## Dependency Scanning
+
+## Trivy
+
+## Secret Scanning
+
+## Deployment Foundation
+
+## Reverse Proxy
+
+## HTTPS
+
+## CORS
+
+## Logging
+
+## Monitoring
+
+## Alerting
+
+## Database Backup
+
+## Restore Verification
+
+## Rollback Strategy
+
+## Smoke Tests
+
+## Operations Runbook
+
+## Secret Rotation
+
+## Security Hardening
+
+## Backend Tests
+
+## Frontend Tests
+
+## Docker Verification
+
+## CI Verification
+
+## Security Verification
+
+## Deployment Status
+
+## Windows CMD Commands
+
+## Linux Deployment Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Final Project Readiness
+```
+
+Do not claim:
+
+* Docker image build passed unless it was executed successfully.
+* CI passed unless the workflow or equivalent commands were verified.
+* Registry publishing succeeded unless an image was actually pushed.
+* Staging deployment succeeded unless a real target was used.
+* Backup succeeded unless a backup file was created.
+* Restore succeeded unless restored into a disposable database and verified.
+
+Report unavailable tools or credentials as:
+
+```text
+Not configured
+Not available
+Not verified
+```
+
+Do not expose secrets.
+
+Do not make unrelated application changes.
+
+Do not start another phase.

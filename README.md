@@ -19,10 +19,52 @@ Included now:
 - Docker Compose foundation
 - Part 2 database schema for products, cart items, orders, order items, payments, payment logs, and webhook events
 - Part 5 Razorpay Test Mode payment initialization, Checkout.js flow, backend signature verification, webhook processing, idempotency, and payment logs
+- Part 6 Docker hardening, Compose deployment foundation, CI, security scans, backups, rollback, and operations documentation
 
 Excluded until later parts:
 
-- Live Mode payments, refunds, settlements, payouts, subscriptions, and production deployment hardening
+- Live Mode payments, refunds, settlements, payouts, subscriptions, and real cloud deployment credentials
+
+## Part 6 DevOps Foundation
+
+Use Node.js `22.x` for Docker and CI. The version is pinned in `.nvmrc`, `.node-version`, and package `engines`.
+
+Local Docker:
+
+```cmd
+copy .env.example .env
+docker compose config
+docker compose build
+docker compose up -d
+docker compose ps
+docker compose exec backend npm run db:migrate
+docker compose exec backend npm run db:seed
+```
+
+Stop containers:
+
+```cmd
+docker compose down
+```
+
+`docker compose down -v` deletes the local PostgreSQL volume and should be treated as destructive.
+
+Production foundation:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d postgres
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm backend npm run db:migrate
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d backend frontend reverse-proxy
+```
+
+Only the reverse proxy exposes public ports in the production foundation. PostgreSQL is internal.
+
+Operational documentation:
+
+- `docs/deployment.md`
+- `docs/operations-runbook.md`
+- `docs/backup-and-restore.md`
+- `docs/security-and-secrets.md`
 
 ## Database Tables
 

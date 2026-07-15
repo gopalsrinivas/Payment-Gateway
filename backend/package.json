@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Part 1 backend foundation for a Razorpay test-mode payment gateway demo.",
   "main": "src/server.js",
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
@@ -26,6 +30,7 @@
     "pg-hstore": "^2.3.4",
     "razorpay": "^2.9.5",
     "sequelize": "^6.37.5",
+    "sequelize-cli": "^6.6.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.17.0"
@@ -36,7 +41,6 @@
     "globals": "^15.14.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
-    "sequelize-cli": "^6.6.2",
     "supertest": "^7.0.0"
   }
 }

@@ -11,6 +11,7 @@ const { errorHandler, notFound } = require("./middlewares/errorMiddleware");
 const app = express();
 
 app.use(helmet());
+app.set("trust proxy", env.trustProxy);
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(attachRequestId);
 app.use(requestLogger);
@@ -24,4 +25,3 @@ app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;
-

@@ -3,9 +3,15 @@ const path = require("path");
 const winston = require("winston");
 const env = require("./env");
 
-const logDir = path.resolve(__dirname, "..", "logs");
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
+const transports = [new winston.transports.Console()];
+
+if (env.logToFiles) {
+  const logDir = path.resolve(__dirname, "..", "logs");
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+  transports.push(new winston.transports.File({ filename: path.join(logDir, "error.log"), level: "error" }));
+  transports.push(new winston.transports.File({ filename: path.join(logDir, "combined.log") }));
 }
 
 const logger = winston.createLogger({
@@ -15,20 +21,8 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: env.nodeEnv !== "production" }),
     winston.format.json(),
   ),
-  defaultMeta: { service: "payment-gateway-backend" },
-  transports: [
-    new winston.transports.File({ filename: path.join(logDir, "error.log"), level: "error" }),
-    new winston.transports.File({ filename: path.join(logDir, "combined.log") }),
-  ],
+  defaultMeta: { service: "payment-gateway-backend", environment: env.nodeEnv, version: env.appVersion },
+  transports,
 });
 
-if (env.nodeEnv !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-    }),
-  );
-}
-
 module.exports = logger;
-
