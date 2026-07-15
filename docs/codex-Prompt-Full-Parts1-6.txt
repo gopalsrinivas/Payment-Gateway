@@ -1,0 +1,1337 @@
+Part-1 → Project Setup
+Part-2 → Database Design
+Part-3 → Backend APIs
+Part-4 → Frontend
+Part-5 → Razorpay Integration
+Part-6 → DevOps
+
+Part-1 → Project Setup and codex prompt and Part-2 database design and Codex prompt ni base ga teesukoni,
+part-3-> Backend APIs base cheysukoni kuda And Part-4 → Frontend base cheysukoni and Part-5 → Razorpay Integration
+Part-6 → DevOps specification mariyu separate Codex implementation prompt create cheyi.
+
+
+
+# Payment Gateway Demo
+
+## Software Requirement Specification (SRS)
+
+Version: 1.0
+
+---
+
+# 1. Project Overview
+
+## Project Name
+
+Payment Gateway Demo using Razorpay Test Mode
+
+## Purpose
+
+The purpose of this project is to develop a small full-stack Payment Gateway Demo application that demonstrates Razorpay payment integration using Test Mode.
+
+The application should allow users to register, log in, view products, add products to a cart, create orders, complete payments using Razorpay Checkout, verify payment signatures, and view order and payment history.
+
+The application should be production-style but interview-friendly, focusing on clean architecture, modular code, authentication, validations, logging, security, REST APIs, payment verification, webhooks, Docker, and CI/CD practices.
+
+Part 1 should create only the project foundation.
+
+Part 1 should not implement complete product, cart, order, checkout, payment verification, payment history, refund, or webhook-processing functionality.
+
+---
+
+# 2. Objectives
+
+The application should demonstrate:
+
+* Clean full-stack project architecture
+* REST API development
+* JWT authentication
+* Role-based authorization
+* PostgreSQL database configuration
+* Sequelize ORM configuration
+* Razorpay SDK configuration
+* Razorpay Test Mode setup
+* Webhook raw-body foundation
+* Centralized error handling
+* Input validation
+* Application logging
+* Swagger documentation
+* Docker deployment foundation
+* Backend and frontend integration readiness
+* Environment variable management
+* Secure credential handling
+* Interview-ready project structure
+
+---
+
+# 3. Technology Stack
+
+## Backend
+
+* Node.js
+* Express.js
+* Sequelize ORM
+* PostgreSQL
+* JavaScript
+
+## Frontend
+
+* Next.js
+* React.js
+* Tailwind CSS
+* Axios
+
+## Authentication
+
+* JWT
+* bcryptjs
+
+## Validation
+
+* express-validator
+* React Hook Form
+
+## Logging
+
+* Winston Logger
+* Morgan
+
+## API Documentation
+
+* Swagger
+* OpenAPI
+
+## Payment Gateway
+
+* Razorpay Test Mode
+* Razorpay Node SDK
+* Razorpay Orders API
+* Razorpay Checkout
+* Razorpay Signature Verification
+* Razorpay Webhooks
+
+## Security
+
+* Helmet
+* CORS
+* Password hashing
+* JWT expiration
+* Environment variables
+
+## Containerization
+
+* Docker
+* Docker Compose
+
+## Development Tools
+
+* Git
+* GitHub
+* Postman
+* ESLint
+* Prettier
+* Nodemon
+
+---
+
+# 4. Database
+
+## Database Name
+
+```text
+payment_gateway_demo
+```
+
+## Database Engine
+
+```text
+PostgreSQL
+```
+
+Part 1 should create only the following tables:
+
+```text
+roles
+users
+```
+
+Product, cart, order, payment, payment log, and webhook event tables should be created only in Part 2.
+
+---
+
+# 5. User Roles
+
+## Admin
+
+Admin can eventually:
+
+* Manage products
+* View all orders
+* View all payments
+* View payment logs
+* View dashboard reports
+* Manage application configuration
+
+In Part 1, Admin role authentication and authorization foundation should be created.
+
+## Customer
+
+Customer can eventually:
+
+* Register and log in
+* View products
+* Add products to cart
+* Create orders
+* Complete Razorpay payments
+* View order history
+* View payment history
+
+In Part 1, Customer registration, login, profile, and logout functionality should be created.
+
+---
+
+# 6. Application Modules
+
+The complete application should contain the following modules:
+
+1. Authentication
+2. User Profile
+3. Role Authorization
+4. Dashboard
+5. Product Management
+6. Cart Management
+7. Order Management
+8. Razorpay Order Creation
+9. Razorpay Checkout
+10. Payment Verification
+11. Payment Failure Handling
+12. Payment History
+13. Webhook Processing
+14. Payment Logs
+15. API Logs
+16. Swagger Documentation
+17. Docker and CI/CD
+
+Part 1 should implement only:
+
+1. Project Setup
+2. Backend Foundation
+3. Frontend Foundation
+4. PostgreSQL Configuration
+5. Sequelize Configuration
+6. Authentication Foundation
+7. Role Authorization Foundation
+8. Razorpay SDK Configuration Foundation
+9. Webhook Raw-Body Foundation
+10. Logging
+11. Swagger
+12. Docker Foundation
+13. Health API
+14. Basic Tests
+
+---
+
+# 7. Payment Flow
+
+The complete payment flow should be:
+
+```text
+User Login
+    ↓
+View Products
+    ↓
+Add Products to Cart
+    ↓
+Create Application Order
+    ↓
+Backend Calculates Trusted Amount
+    ↓
+Backend Creates Razorpay Order
+    ↓
+Frontend Opens Razorpay Checkout
+    ↓
+Customer Completes Payment
+    ↓
+Razorpay Returns Payment Details
+    ↓
+Frontend Sends Payment Details to Backend
+    ↓
+Backend Verifies Payment Signature
+    ↓
+Backend Updates Payment Status
+    ↓
+Backend Updates Order Status
+    ↓
+Payment Success Page
+```
+
+Webhook flow:
+
+```text
+Razorpay
+    ↓
+Webhook Endpoint
+    ↓
+Read Exact Raw Request Body
+    ↓
+Verify Webhook Signature
+    ↓
+Store Webhook Event
+    ↓
+Prevent Duplicate Processing
+    ↓
+Update Payment Status
+    ↓
+Update Order Status
+```
+
+Part 1 should create only the Razorpay configuration and webhook route foundation.
+
+Part 1 should not create actual Razorpay orders or process payments.
+
+---
+
+# 8. Authentication Requirements
+
+Part 1 should implement the following APIs:
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/auth/profile
+```
+
+## Registration
+
+Registration should:
+
+* Validate name
+* Validate email
+* Validate password
+* Require a minimum password length of 8 characters
+* Prevent duplicate email registration
+* Assign Customer role by default
+* Hash the password
+* Store the user in PostgreSQL
+* Return safe user information
+* Never return the password
+
+## Login
+
+Login should:
+
+* Validate email and password
+* Verify that the user exists
+* Reject inactive users
+* Compare the hashed password
+* Generate a JWT token
+* Return safe user information
+* Return role information
+* Never log or return the password
+
+## Profile
+
+Profile API should:
+
+* Require a valid JWT
+* Return the authenticated user
+* Include role information
+* Exclude the password
+
+## Logout
+
+JWT authentication is stateless.
+
+Logout should:
+
+* Return a success response from the backend
+* Remove the token from the frontend
+* Not implement JWT blacklisting in Part 1
+
+---
+
+# 9. Razorpay Configuration Foundation
+
+Create the following backend configuration file:
+
+```text
+backend/src/config/razorpay.js
+```
+
+The Razorpay configuration should:
+
+* Use Razorpay Test Mode only
+* Load credentials from environment variables
+* Initialize one reusable Razorpay client
+* Validate missing configuration clearly
+* Never expose the Razorpay Key Secret
+* Never log the Razorpay Key Secret
+* Never send the Razorpay Key Secret to the frontend
+* Avoid calling live APIs during Part 1
+* Keep the integration ready for Part 3 and Part 5
+
+Required environment variables:
+
+```text
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+```
+
+Only the Razorpay Key ID may be available to the frontend.
+
+---
+
+# 10. Webhook Foundation
+
+Create the webhook route:
+
+```text
+POST /api/v1/webhooks/razorpay
+```
+
+The webhook foundation should:
+
+* Support the exact raw request body
+* Keep webhook parsing separate from normal JSON parsing
+* Avoid breaking other JSON APIs
+* Return a safe placeholder response
+* Not mark any payment as successful
+* Not create payment records
+* Not process Razorpay events in Part 1
+* Keep the route ready for later implementation
+
+Webhook signature verification should use:
+
+```text
+RAZORPAY_WEBHOOK_SECRET
+```
+
+Complete webhook event processing should be implemented in Part 5.
+
+---
+
+# 11. Non-Functional Requirements
+
+The application should:
+
+* Use clean MVC-style architecture
+* Use Route → Middleware → Controller → Service → Model flow
+* Use reusable components
+* Use REST APIs
+* Use JWT authentication
+* Use role-based authorization
+* Use environment variables
+* Use centralized error handling
+* Use input validations
+* Use structured logging
+* Use PostgreSQL
+* Use Sequelize ORM
+* Use Docker
+* Use Swagger
+* Use async/await
+* Use standard API responses
+* Avoid exposing sensitive information
+* Be responsive on desktop and mobile
+* Remain simple and interview-friendly
+* Avoid unnecessary enterprise complexity
+
+---
+
+# 12. Coding Standards
+
+Every controller should contain only request and response handling.
+
+Business logic should be written inside services.
+
+Database operations should be written using Sequelize models.
+
+Do not create a repository layer for this project.
+
+Every API should have validation.
+
+Every API should return a standard response format.
+
+Controllers should pass errors to centralized error middleware using `next(error)`.
+
+Do not write direct SQL queries inside controllers.
+
+Do not write Sequelize queries directly inside controllers.
+
+Use async/await everywhere.
+
+Use environment variables for configuration.
+
+Follow REST naming conventions.
+
+Use transactions where multiple related database updates are required.
+
+Never log:
+
+* Passwords
+* JWT tokens
+* Razorpay Key Secret
+* Razorpay Webhook Secret
+* Complete sensitive request bodies
+* Card information
+
+Never trust payment amounts sent by the frontend.
+
+The final payable amount should eventually be calculated using trusted product and order data from the backend.
+
+---
+
+# 13. Standard API Response Format
+
+## Success Response
+
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {},
+  "statusCode": 200
+}
+```
+
+## Error Response
+
+```json
+{
+  "success": false,
+  "message": "Operation failed",
+  "errors": [],
+  "statusCode": 400,
+  "requestId": "REQ-000001"
+}
+```
+
+---
+
+# 14. Backend Project Folder Structure
+
+```text
+backend/
+│
+├── src/
+│   ├── config/
+│   │   ├── database.js
+│   │   ├── env.js
+│   │   ├── logger.js
+│   │   ├── razorpay.js
+│   │   └── swagger.js
+│   │
+│   ├── controllers/
+│   │   └── authController.js
+│   │
+│   ├── services/
+│   │   └── authService.js
+│   │
+│   ├── models/
+│   │   ├── index.js
+│   │   ├── Role.js
+│   │   └── User.js
+│   │
+│   ├── routes/
+│   │   ├── index.js
+│   │   ├── authRoutes.js
+│   │   ├── healthRoutes.js
+│   │   └── webhookRoutes.js
+│   │
+│   ├── middlewares/
+│   │   ├── authMiddleware.js
+│   │   ├── roleMiddleware.js
+│   │   ├── validationMiddleware.js
+│   │   ├── requestLoggerMiddleware.js
+│   │   ├── rawBodyMiddleware.js
+│   │   └── errorMiddleware.js
+│   │
+│   ├── validations/
+│   │   └── authValidation.js
+│   │
+│   ├── utils/
+│   │   ├── responseHandler.js
+│   │   ├── jwt.js
+│   │   ├── password.js
+│   │   ├── requestId.js
+│   │   └── constants.js
+│   │
+│   ├── migrations/
+│   ├── seeders/
+│   ├── logs/
+│   ├── swagger/
+│   ├── app.js
+│   └── server.js
+│
+├── tests/
+├── .env
+├── .env.example
+├── .sequelizerc
+├── package.json
+├── Dockerfile
+└── README.md
+```
+
+Do not create the following backend modules in Part 1:
+
+```text
+Product
+Cart
+Order
+Order Item
+Payment
+Payment Log
+Webhook Event
+Refund
+```
+
+---
+
+# 15. Frontend Project Folder Structure
+
+Use Next.js App Router.
+
+```text
+frontend/
+│
+├── public/
+│
+├── src/
+│   ├── app/
+│   │   ├── login/
+│   │   │   └── page.js
+│   │   ├── register/
+│   │   │   └── page.js
+│   │   ├── dashboard/
+│   │   │   └── page.js
+│   │   ├── layout.js
+│   │   └── page.js
+│   │
+│   ├── components/
+│   │   ├── layout/
+│   │   └── ui/
+│   │
+│   ├── contexts/
+│   │   └── AuthContext.js
+│   │
+│   ├── services/
+│   │   ├── apiClient.js
+│   │   └── authService.js
+│   │
+│   ├── hooks/
+│   ├── utils/
+│   ├── config/
+│   └── styles/
+│
+├── .env.local
+├── .env.example
+├── package.json
+├── next.config.mjs
+├── Dockerfile
+└── README.md
+```
+
+Part 1 frontend should create only:
+
+* Registration page
+* Login page
+* Basic protected dashboard placeholder
+* Authentication context
+* Axios API client
+* Logout functionality
+* Basic responsive layout
+
+Do not create these pages in Part 1:
+
+```text
+/products
+/cart
+/checkout
+/orders
+/payments
+/payment-success
+/payment-failed
+```
+
+---
+
+# 16. Root Project Folder Structure
+
+```text
+payment_gateway_demo/
+│
+├── backend/
+├── frontend/
+├── docs/
+├── postman/
+├── scripts/
+├── .github/
+├── docker-compose.yml
+├── .gitignore
+├── .env.example
+└── README.md
+```
+
+---
+
+# 17. Environment Variables
+
+## Backend Environment Variables
+
+Create:
+
+```text
+backend/.env.example
+```
+
+Content:
+
+```env
+NODE_ENV=development
+PORT=5000
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=payment_gateway_demo
+DB_USER=postgres
+DB_PASSWORD=replace_with_database_password
+
+JWT_SECRET=replace_with_long_random_secret
+JWT_EXPIRES_IN=1d
+
+RAZORPAY_KEY_ID=replace_with_test_key_id
+RAZORPAY_KEY_SECRET=replace_with_test_key_secret
+RAZORPAY_WEBHOOK_SECRET=replace_with_webhook_secret
+
+CORS_ORIGIN=http://localhost:3000
+LOG_LEVEL=info
+```
+
+## Frontend Environment Variables
+
+Create:
+
+```text
+frontend/.env.example
+```
+
+Content:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+NEXT_PUBLIC_RAZORPAY_KEY_ID=replace_with_test_key_id
+```
+
+Never add the Razorpay Key Secret or Webhook Secret to frontend environment variables.
+
+## Root Environment Variables
+
+Create:
+
+```text
+.env.example
+```
+
+Content:
+
+```env
+POSTGRES_DB=payment_gateway_demo
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=replace_with_database_password
+
+BACKEND_PORT=5000
+FRONTEND_PORT=3000
+```
+
+Do not commit real `.env` files.
+
+---
+
+# 18. PostgreSQL and Sequelize Setup
+
+Configure Sequelize using environment variables.
+
+Create migrations for:
+
+```text
+roles
+users
+```
+
+Create seeders for:
+
+```text
+Admin
+Customer
+```
+
+Create one local development Admin user using clearly documented demo credentials.
+
+Do not use real production credentials.
+
+Configure the following relationship:
+
+```text
+Role has many Users
+User belongs to Role
+```
+
+Use soft delete where consistent with the project.
+
+Use migrations and seeders instead of Sequelize automatic table synchronization.
+
+Do not use:
+
+```javascript
+sequelize.sync({ alter: true });
+```
+
+for production-style schema management.
+
+---
+
+# 19. Role Table
+
+Recommended fields:
+
+```text
+id
+name
+description
+is_active
+created_at
+updated_at
+deleted_at
+```
+
+Requirements:
+
+* Role name must be unique
+* Admin and Customer roles should be seeded
+* Soft delete may be enabled
+* Timestamps should be enabled
+
+Complete audit columns will be standardized in Part 2.
+
+---
+
+# 20. User Table
+
+Recommended fields:
+
+```text
+id
+name
+email
+password
+role_id
+is_active
+created_at
+updated_at
+deleted_at
+```
+
+Requirements:
+
+* Email must be unique
+* Password must be hashed
+* Password should be excluded from normal responses
+* User should belong to a role
+* Only active users should be allowed to log in
+* Soft delete may be enabled
+* Customer role should be assigned by default during registration
+
+Complete audit columns will be standardized in Part 2.
+
+---
+
+# 21. Logging Requirements
+
+Use Winston Logger.
+
+Log:
+
+* Application startup
+* Database connection success
+* Database connection failure
+* User registration
+* User login
+* Authentication failure
+* Authorization failure
+* Health checks where useful
+* API errors
+* Validation errors
+* Razorpay configuration errors
+* Webhook route access
+
+Add a unique request ID to each request.
+
+Do not log sensitive values.
+
+---
+
+# 22. Error Handling
+
+Implement centralized error handling for:
+
+* Validation errors
+* Authentication errors
+* Authorization errors
+* Not-found errors
+* Conflict errors
+* Sequelize validation errors
+* Sequelize unique constraint errors
+* Database errors
+* Razorpay configuration errors
+* Webhook errors
+* Internal server errors
+
+Do not expose stack traces in production.
+
+---
+
+# 23. Swagger Requirements
+
+Swagger should be available at:
+
+```text
+http://localhost:5000/api-docs
+```
+
+Use the OpenAPI server URL:
+
+```text
+http://localhost:5000/api/v1
+```
+
+Document the following endpoints:
+
+```text
+POST /auth/register
+POST /auth/login
+POST /auth/logout
+GET  /auth/profile
+GET  /health
+POST /webhooks/razorpay
+```
+
+Swagger should include:
+
+* Request body schemas
+* Validation rules
+* JWT bearer authentication
+* Success response examples
+* Error response examples
+* Field-level validation errors
+* Webhook foundation note
+
+Clearly state that the Razorpay webhook endpoint is only a Part 1 foundation.
+
+---
+
+# 24. Health API
+
+Implement:
+
+```text
+GET /api/v1/health
+```
+
+The response should include:
+
+* Application status
+* Current timestamp
+* Environment
+* Database connectivity status where practical
+
+Do not expose secrets or database credentials.
+
+---
+
+# 25. Docker Foundation
+
+Create:
+
+```text
+backend/Dockerfile
+frontend/Dockerfile
+docker-compose.yml
+```
+
+Docker Compose should contain:
+
+```text
+postgres
+backend
+frontend
+```
+
+Requirements:
+
+* Use a named PostgreSQL volume
+* Use a shared Docker network
+* Configure health checks
+* Use environment variables
+* Use correct service hostnames
+* Allow backend database retries
+* Point frontend to the backend correctly
+* Preserve local non-Docker development
+* Do not include real secrets
+* Use multi-stage builds where useful
+
+Part 1 should create only a clean Docker foundation.
+
+Advanced production deployment should be implemented in Part 6.
+
+---
+
+# 26. Testing Requirements
+
+Add meaningful backend tests for:
+
+* Successful user registration
+* Duplicate registration rejection
+* Successful login
+* Invalid login rejection
+* Inactive user login rejection
+* Profile API without a token
+* Profile API with a valid token
+* Health endpoint
+* Role middleware foundation
+* Webhook placeholder endpoint
+
+Use the existing Node.js test setup or Supertest.
+
+Clean test-created database data safely.
+
+Do not create payment tests in Part 1.
+
+---
+
+# 27. Security Requirements
+
+The project should follow these rules:
+
+* Use Razorpay Test Mode only
+* Never expose the Razorpay Key Secret
+* Never expose the Razorpay Webhook Secret
+* Never hardcode credentials
+* Never commit real `.env` files
+* Hash passwords
+* Use JWT expiration
+* Enable Helmet
+* Configure CORS
+* Validate all inputs
+* Do not log passwords or tokens
+* Do not trust frontend payment amounts
+* Keep payment verification on the backend
+* Keep webhook verification on the backend
+* Do not store card information
+* Do not implement payment processing prematurely
+
+---
+
+# 28. Part-1 Deliverables
+
+Part 1 should produce:
+
+* Root project structure
+* Backend application foundation
+* Frontend application foundation
+* PostgreSQL configuration
+* Sequelize configuration
+* Roles migration
+* Users migration
+* Admin and Customer role seeders
+* Local development Admin user seeder
+* Registration API
+* Login API
+* Logout API
+* Protected profile API
+* JWT utility
+* Authentication middleware
+* Role authorization middleware
+* Razorpay SDK configuration foundation
+* Webhook raw-body foundation
+* Health API
+* Centralized error handling
+* Winston logging
+* Request IDs
+* Swagger setup
+* Safe environment examples
+* Backend Dockerfile
+* Frontend Dockerfile
+* Docker Compose foundation
+* Backend tests
+* Root README
+* Backend README
+* Frontend README
+
+---
+
+# 29. Part-1 Excluded Scope
+
+Do not implement the following in Part 1:
+
+* Product CRUD
+* Product search
+* Cart management
+* Order creation
+* Order items
+* Razorpay Order API call
+* Razorpay Checkout
+* Payment signature verification
+* Payment failure handling
+* Payment history
+* Webhook event processing
+* Payment logs
+* Refunds
+* Dashboard reports
+* Production cloud deployment
+* Advanced CI/CD
+
+These features belong to later parts.
+
+---
+
+# 30. Development Order
+
+Follow this development order:
+
+```text
+1. Inspect the existing repository
+2. Run git status
+3. Preserve existing correct files
+4. Create the root project structure
+5. Initialize the backend
+6. Initialize the frontend
+7. Configure PostgreSQL
+8. Configure Sequelize
+9. Create roles migration
+10. Create users migration
+11. Create role seeders
+12. Create development Admin user seeder
+13. Configure model associations
+14. Implement common utilities
+15. Implement centralized error handling
+16. Implement logging and request IDs
+17. Implement registration
+18. Implement login
+19. Implement JWT middleware
+20. Implement role middleware
+21. Implement profile
+22. Implement logout
+23. Configure Razorpay SDK foundation
+24. Configure webhook raw-body foundation
+25. Implement health API
+26. Configure Swagger
+27. Create frontend authentication pages
+28. Create authentication context
+29. Create protected dashboard placeholder
+30. Create Docker foundation
+31. Add tests
+32. Update documentation
+33. Run complete verification
+```
+
+---
+
+# 31. Part-1 Acceptance Criteria
+
+Part 1 is complete only when:
+
+* Backend starts successfully
+* Frontend starts successfully
+* PostgreSQL connection works
+* Sequelize migrations run successfully
+* Seeders run successfully
+* Roles and Users tables are created
+* Admin and Customer roles are seeded
+* Local Admin account is created
+* Registration API works
+* Duplicate registration is rejected
+* Login API works
+* JWT token is returned
+* Invalid login is rejected
+* Protected profile API works
+* Missing token is rejected
+* Role middleware exists
+* Swagger opens successfully
+* Health API returns HTTP 200
+* Razorpay SDK configuration exists
+* Razorpay secrets remain backend-only
+* Webhook raw-body foundation exists
+* Normal JSON APIs continue to work
+* Backend lint passes
+* Backend tests pass
+* Frontend lint passes
+* Frontend production build passes
+* Docker Compose configuration is valid
+* No Product, Cart, Order, or Payment business modules are implemented
+
+---
+
+# 32. Codex Implementation Instructions
+
+You are a Senior Full Stack Developer.
+
+Build only Part 1 of the Payment Gateway Demo application.
+
+Before making changes:
+
+1. Inspect the complete repository.
+2. Run `git status`.
+3. Read the available project documentation.
+4. Inspect all existing files.
+5. Preserve correct existing implementation.
+6. Do not overwrite correct files unnecessarily.
+7. Identify conflicts before editing.
+8. List the files expected to be created or modified.
+9. Summarize the implementation plan.
+
+During implementation:
+
+* Follow the documented architecture.
+* Keep controllers thin.
+* Put business logic inside services.
+* Use Sequelize models for database access.
+* Use migrations and seeders.
+* Use async/await.
+* Use centralized error handling.
+* Use standard API responses.
+* Use validations for every API.
+* Use safe logging.
+* Keep the Razorpay Key Secret backend-only.
+* Use Razorpay Test Mode only.
+* Do not create payment business logic.
+* Do not create incomplete Product, Cart, Order, or Payment modules.
+* Avoid unnecessary enterprise complexity.
+* Keep the project runnable locally and through Docker.
+
+After implementation:
+
+1. List all created files.
+2. List all modified files.
+3. Run backend lint.
+4. Run backend tests.
+5. Run frontend lint.
+6. Run the frontend production build.
+7. Validate Docker Compose.
+8. Run Sequelize migrations.
+9. Run Sequelize seeders.
+10. Start the backend.
+11. Verify the health API.
+12. Verify Swagger.
+13. Verify registration.
+14. Verify duplicate registration rejection.
+15. Verify login.
+16. Verify invalid login rejection.
+17. Verify the protected profile API.
+18. Confirm the Razorpay configuration foundation exists.
+19. Confirm the Razorpay Key Secret is not exposed.
+20. Confirm the webhook raw-body foundation exists.
+21. Confirm normal JSON APIs are not broken.
+22. Confirm no payment business functionality was implemented.
+23. Provide exact Windows CMD commands.
+24. List all remaining manual steps.
+25. Do not start Part 2 automatically.
+
+Do not claim that a command passed unless it was actually executed successfully.
+
+When a dependency, database, Docker service, Razorpay credential, or environment variable is unavailable, clearly report it as not configured or not verified.
+
+---
+
+# 33. Final Codex Output Format
+
+Provide the final implementation report using the following headings:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Backend Setup
+
+## Frontend Setup
+
+## Database Setup
+
+## Sequelize Migrations
+
+## Seed Data
+
+## Authentication
+
+## Role Authorization
+
+## Razorpay Configuration Foundation
+
+## Webhook Foundation
+
+## Logging
+
+## Error Handling
+
+## Swagger
+
+## Docker
+
+## Tests
+
+## Verification Results
+
+## Security Verification
+
+## Windows CMD Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Part 2 Readiness
+```
+
+---
+
+# Next Part
+
+Part 2 will contain:
+
+* Complete Database Design
+* Roles Table
+* Users Table
+* Products Table
+* Cart Items Table
+* Orders Table
+* Order Items Table
+* Payments Table
+* Payment Logs Table
+* Webhook Events Table
+* Primary Keys
+* Foreign Keys
+* Relationships
+* Constraints
+* Unique Constraints
+* Check Constraints
+* Indexes
+* Audit Fields
+* `created_at`
+* `created_by`
+* `updated_at`
+* `updated_by`
+* Soft Delete
+* `is_deleted`
+* `deleted_at`
+* `deleted_by`
+* Seed Data
+* Sequelize Models
+* Sequelize Migrations
+* Database Acceptance Criteria
