@@ -36,8 +36,8 @@ const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
 test.before(async () => {
   await sequelize.authenticate();
-  const adminRole = await Role.findOne({ where: { name: "Admin" } });
-  const customerRole = await Role.findOne({ where: { name: "Customer" } });
+  const [adminRole] = await Role.findOrCreate({ where: { name: "Admin" }, defaults: { description: "Admin role for tests" } });
+  const [customerRole] = await Role.findOrCreate({ where: { name: "Customer" }, defaults: { description: "Customer role for tests" } });
   const admin = await User.create({
     name: "Part 3 Admin",
     email: `part3-admin-${suffix}@example.com`,
@@ -64,9 +64,11 @@ test.before(async () => {
 
 test.after(async () => {
   await sequelize.query("DELETE FROM payment_logs WHERE request_id LIKE 'PART3-%'");
-  await sequelize.query("DELETE FROM payments WHERE user_id IN (:ids)", { replacements: { ids: created.users } });
-  await sequelize.query("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_by IN (:ids))", { replacements: { ids: created.users } });
-  await sequelize.query("DELETE FROM orders WHERE created_by IN (:ids)", { replacements: { ids: created.users } });
+  if (created.users.length) {
+    await sequelize.query("DELETE FROM payments WHERE user_id IN (:ids)", { replacements: { ids: created.users } });
+    await sequelize.query("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_by IN (:ids))", { replacements: { ids: created.users } });
+    await sequelize.query("DELETE FROM orders WHERE created_by IN (:ids)", { replacements: { ids: created.users } });
+  }
   if (created.payments.length) {
     await sequelize.query("DELETE FROM payments WHERE id IN (:ids)", { replacements: { ids: created.payments } });
   }
@@ -74,9 +76,13 @@ test.after(async () => {
     await sequelize.query("DELETE FROM order_items WHERE order_id IN (:ids)", { replacements: { ids: created.orders } });
     await sequelize.query("DELETE FROM orders WHERE id IN (:ids)", { replacements: { ids: created.orders } });
   }
-  await sequelize.query("DELETE FROM cart_items WHERE user_id IN (:ids)", { replacements: { ids: created.users } });
+  if (created.users.length) {
+    await sequelize.query("DELETE FROM cart_items WHERE user_id IN (:ids)", { replacements: { ids: created.users } });
+  }
   await sequelize.query("DELETE FROM products WHERE sku LIKE :sku", { replacements: { sku: `PART3-${suffix}%` } });
-  await sequelize.query("DELETE FROM users WHERE id IN (:ids)", { replacements: { ids: created.users } });
+  if (created.users.length) {
+    await sequelize.query("DELETE FROM users WHERE id IN (:ids)", { replacements: { ids: created.users } });
+  }
   await sequelize.close();
 });
 

@@ -59,7 +59,7 @@ const makeOrder = async ({ userId = customer.id, total = "123.45", paymentStatus
 
 test.before(async () => {
   await sequelize.authenticate();
-  const role = await Role.findOne({ where: { name: "Customer" } });
+  const [role] = await Role.findOrCreate({ where: { name: "Customer" }, defaults: { description: "Customer role for tests" } });
   customer = await User.create({
     name: "Part 5 Customer",
     email: `part5-customer-${suffix}@example.com`,
@@ -100,7 +100,9 @@ test.after(async () => {
   await sequelize.query("DELETE FROM order_items WHERE order_id IN (:ids)", { replacements: { ids: orderIds.length ? orderIds : [0] } });
   await sequelize.query("DELETE FROM orders WHERE id IN (:ids)", { replacements: { ids: orderIds.length ? orderIds : [0] } });
   await sequelize.query("DELETE FROM products WHERE sku = :sku", { replacements: { sku: product?.sku || "" } });
-  await sequelize.query("DELETE FROM users WHERE id IN (:ids)", { replacements: { ids: createdUserIds } });
+  if (createdUserIds.length) {
+    await sequelize.query("DELETE FROM users WHERE id IN (:ids)", { replacements: { ids: createdUserIds } });
+  }
   await sequelize.close();
 });
 

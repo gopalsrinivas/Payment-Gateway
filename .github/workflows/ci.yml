@@ -39,12 +39,14 @@ jobs:
       DB_TEST_NAME: payment_gateway_test
       DB_USER: test_user
       DB_PASSWORD: test_password
-      JWT_SECRET: test_jwt_secret_for_ci_only
+      JWT_SECRET: ci_test_jwt_secret_with_sufficient_length
+      JWT_EXPIRES_IN: 1d
       RAZORPAY_KEY_ID: rzp_test_ci_placeholder
-      RAZORPAY_KEY_SECRET: ci_razorpay_secret_placeholder
-      RAZORPAY_WEBHOOK_SECRET: ci_webhook_secret_placeholder
+      RAZORPAY_KEY_SECRET: ci_test_key_secret_placeholder
+      RAZORPAY_WEBHOOK_SECRET: ci_test_webhook_secret_placeholder
       CORS_ORIGIN: http://localhost:3000
       LOG_LEVEL: error
+      LOG_TO_FILES: "false"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -52,11 +54,19 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm run db:migrate
-      - run: npm run db:migrate:status
-      - run: npm run lint
-      - run: npm test
+      - name: Install backend dependencies
+        run: npm ci
+      - name: Wait for PostgreSQL
+        run: |
+          node -e "const { Client } = require('pg'); const wait = async () => { for (let i = 0; i < 30; i += 1) { const client = new Client({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT), database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD }); try { await client.connect(); await client.end(); return; } catch (error) { try { await client.end(); } catch (_) {} if (i === 29) throw error; await new Promise((resolve) => setTimeout(resolve, 1000)); } } }; wait();"
+      - name: Run migrations
+        run: npm run db:migrate
+      - name: Check migration status
+        run: npm run db:migrate:status
+      - name: Run backend lint
+        run: npm run lint
+      - name: Run backend tests
+        run: npm test
 
   frontend:
     runs-on: ubuntu-latest

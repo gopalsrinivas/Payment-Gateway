@@ -22,7 +22,7 @@ let order;
 
 test.before(async () => {
   await sequelize.authenticate();
-  const role = await Role.findOne({ where: { name: "Customer" } });
+  const [role] = await Role.findOrCreate({ where: { name: "Customer" }, defaults: { description: "Customer role for tests" } });
   customer = await User.create({
     name: "Database Test User",
     email,
@@ -181,4 +181,3 @@ test("soft-deleted products are excluded by default scope", async () => {
   assert.equal(hidden, null);
   assert.equal(visibleUnscoped.id, product.id);
 });
-

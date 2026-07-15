@@ -75,4 +75,4 @@ Checkout loads `https://checkout.razorpay.com/v1/checkout.js` only when needed. 
 
 ## Known Limitations
 
-Live Mode payments, refunds, settlements, subscriptions, and production deployment hardening are out of scope until later phases.
+Live Mode payments, refunds, settlements, subscriptions, payouts, and configured staging deployment are out of scope for the local demo.
