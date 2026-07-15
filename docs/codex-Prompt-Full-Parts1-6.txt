@@ -2098,3 +2098,1348 @@ When PostgreSQL, environment variables, dependencies, or services are unavailabl
 Do not make unrelated changes.
 
 Do not start Part 3.
+
+Part-3:
+--------
+Read these files completely before making any changes:
+
+1. `docs/Part-3-Backend-APIs-Payment-Gateway.md`
+2. `docs/Codex-Prompt-Part-3-Backend-APIs-Payment-Gateway.md`
+
+Continue from the existing Part 1 and Part 2 implementation.
+
+Implement ONLY Part 3: backend APIs, backend architecture, validations, authorization, Swagger documentation, logging, and API tests.
+
+Project root:
+
+```text
+D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+Do not create another nested project folder.
+
+## Existing Implementation
+
+Part 1 is complete and includes:
+
+* Backend and frontend project foundation
+* PostgreSQL and Sequelize configuration
+* Roles and Users tables
+* Registration
+* Login
+* Logout
+* Protected profile
+* JWT authentication
+* Role middleware
+* Swagger
+* Logging
+* Centralized error handling
+* Razorpay SDK configuration foundation
+* Webhook raw-body route foundation
+* Docker foundation
+* Backend and frontend tests
+
+Part 2 is complete and includes:
+
+* Roles
+* Users
+* Products
+* Cart Items
+* Orders
+* Order Items
+* Payments
+* Payment Logs
+* Webhook Events
+* Audit fields
+* Soft delete
+* Constraints
+* Partial indexes
+* Foreign keys
+* Sequelize models
+* Model associations
+* Seed products
+* Database tests
+
+Preserve all working Part 1 and Part 2 functionality.
+
+---
+
+# Scope
+
+Implement only backend business APIs for:
+
+* Dashboard
+* Products
+* Cart
+* Orders
+* Payments
+* Payment History
+* Payment Logs
+* Webhook administration or inspection where appropriate
+
+Part 3 should prepare the backend for Part 4 frontend integration and Part 5 Razorpay integration.
+
+Part 3 must not implement complete Razorpay payment processing.
+
+---
+
+# Important Restrictions
+
+* Do not recreate or overwrite correct existing migrations.
+* Do not recreate existing Sequelize models.
+* Do not duplicate model associations.
+* Do not remove or weaken database constraints.
+* Do not modify the database schema unless required to fix a real implementation issue.
+* Explain any required schema change before implementing it.
+* Do not generate frontend business pages.
+* Do not implement Razorpay Checkout.
+* Do not implement real Razorpay Order API calls.
+* Do not implement final payment signature verification.
+* Do not implement full webhook event processing.
+* Do not implement refunds.
+* Do not implement production deployment.
+* Do not use a repository layer.
+* Do not use `sequelize.sync()`.
+* Do not expose sensitive fields.
+* Do not trust amounts sent by the frontend.
+
+---
+
+# Backend Architecture
+
+Use this flow:
+
+```text
+Route
+→ Validation Middleware
+→ Authentication Middleware
+→ Authorization Middleware
+→ Controller
+→ Service
+→ Sequelize Model
+→ PostgreSQL
+```
+
+Do not use a repository layer.
+
+Controllers must:
+
+* Accept `req`, `res`, and `next`.
+* Use async functions.
+* Handle only HTTP request and response concerns.
+* Call service methods.
+* Return standard response objects.
+* Pass errors using `next(error)`.
+* Not contain business logic.
+* Not contain direct Sequelize queries.
+
+Services must:
+
+* Contain business logic.
+* Use Sequelize models.
+* Use transactions where required.
+* Enforce ownership and role rules.
+* Return plain data.
+* Not access Express response objects.
+* Not return sensitive fields.
+
+Routes must:
+
+* Apply validation.
+* Apply authentication where required.
+* Apply authorization where required.
+* Use REST naming conventions.
+* Be registered under `/api/v1`.
+
+---
+
+# Folder Structure
+
+Preserve the existing backend structure.
+
+Add or update files under:
+
+```text
+backend/src/
+│
+├── controllers/
+├── services/
+├── routes/
+├── validations/
+├── middlewares/
+├── utils/
+├── swagger/
+└── app.js
+```
+
+Expected controller files may include:
+
+```text
+productController.js
+cartController.js
+orderController.js
+paymentController.js
+dashboardController.js
+paymentLogController.js
+```
+
+Expected service files may include:
+
+```text
+productService.js
+cartService.js
+orderService.js
+paymentService.js
+dashboardService.js
+paymentLogService.js
+```
+
+Expected route files may include:
+
+```text
+productRoutes.js
+cartRoutes.js
+orderRoutes.js
+paymentRoutes.js
+dashboardRoutes.js
+paymentLogRoutes.js
+```
+
+Expected validation files may include:
+
+```text
+productValidation.js
+cartValidation.js
+orderValidation.js
+paymentValidation.js
+commonValidation.js
+```
+
+Reuse existing common utilities and middleware.
+
+---
+
+# Common API Prefix
+
+Use:
+
+```text
+/api/v1
+```
+
+Register route groups:
+
+```text
+/api/v1/products
+/api/v1/cart
+/api/v1/orders
+/api/v1/payments
+/api/v1/payment-logs
+/api/v1/dashboard
+```
+
+Preserve existing routes:
+
+```text
+/api/v1/auth
+/api/v1/health
+/api/v1/webhooks
+```
+
+---
+
+# Standard API Response
+
+Use the existing response helper.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {},
+  "statusCode": 200
+}
+```
+
+Error response:
+
+```json
+{
+  "success": false,
+  "message": "Operation failed",
+  "errors": [],
+  "statusCode": 400,
+  "requestId": "REQ-000001"
+}
+```
+
+List responses should include pagination metadata:
+
+```json
+{
+  "success": true,
+  "message": "Records retrieved successfully",
+  "data": {
+    "items": [],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "totalItems": 0,
+      "totalPages": 0
+    }
+  },
+  "statusCode": 200
+}
+```
+
+---
+
+# Authentication and Authorization
+
+Reuse existing JWT authentication middleware.
+
+Roles:
+
+```text
+Admin
+Customer
+```
+
+Admin can:
+
+* Create products
+* Update products
+* Soft-delete products
+* View all products including inactive products when authorized
+* View all orders
+* View all payments
+* View payment logs
+* View dashboard totals
+
+Customer can:
+
+* View active products
+* Manage only their own cart
+* Create orders from their own cart
+* View only their own orders
+* View only their own payments
+* View only their own payment history
+
+Customers must not access:
+
+* Other users’ cart records
+* Other users’ orders
+* Other users’ payment records
+* Admin-only payment logs
+* Admin dashboard data where restricted
+
+Return HTTP 403 for unauthorized role access.
+
+Return HTTP 404 instead of revealing another user’s protected record where appropriate.
+
+---
+
+# Audit Field Rules
+
+Apply audit fields using the authenticated user.
+
+For create operations:
+
+```text
+created_by = authenticated user ID
+updated_by = authenticated user ID
+```
+
+For update operations:
+
+```text
+updated_by = authenticated user ID
+```
+
+For soft delete:
+
+```text
+is_deleted = true
+deleted_at = current timestamp
+deleted_by = authenticated user ID
+updated_by = authenticated user ID
+```
+
+System-generated records may use nullable audit fields only where documented.
+
+Do not trust audit user IDs from the frontend.
+
+---
+
+# Soft Delete Rules
+
+Use the existing `is_deleted` strategy.
+
+* Do not physically delete Products, Cart Items, Orders, Payments, or audit data unless explicitly documented.
+* Default list APIs must exclude soft-deleted records.
+* Admin-only APIs may optionally include deleted records using a validated filter.
+* Historical Orders and Payments must remain available.
+* Deleted Products must not disappear from existing Order Item snapshots.
+* Cart item removal should use soft delete if consistent with the Part 2 model.
+* Re-adding a soft-deleted cart product should restore or safely recreate the row according to existing database constraints.
+
+---
+
+# Search, Filtering, Sorting, and Pagination
+
+Implement common query parameters:
+
+```text
+page
+limit
+search
+sortBy
+sortOrder
+```
+
+Rules:
+
+* Default page: `1`
+* Default limit: `10`
+* Maximum limit: `100`
+* Allowed sort order: `asc`, `desc`
+* Validate allowed sort columns.
+* Do not pass arbitrary frontend values directly into Sequelize order clauses.
+* Use parameterized Sequelize operations.
+* Return consistent pagination metadata.
+
+Filtering should be implemented only for documented fields.
+
+---
+
+# Product APIs
+
+Implement:
+
+```text
+GET    /api/v1/products
+GET    /api/v1/products/:id
+POST   /api/v1/products
+PUT    /api/v1/products/:id
+PATCH  /api/v1/products/:id/status
+DELETE /api/v1/products/:id
+```
+
+## Product List
+
+Access:
+
+* Public or authenticated customer access may be allowed for active products.
+* Admin can view all products based on validated filters.
+
+Support:
+
+* Pagination
+* Search by name, SKU, or description
+* Filter by active status
+* Filter by currency where useful
+* Sorting by name, price, created date, or updated date
+
+Customer response should include only active, non-deleted products.
+
+Admin may use:
+
+```text
+includeInactive=true
+includeDeleted=true
+```
+
+only if explicitly authorized and validated.
+
+## Product Details
+
+* Return active product details to customers.
+* Return full product details to Admin.
+* Return 404 for deleted or unavailable products for customers.
+
+## Create Product
+
+Admin only.
+
+Validate:
+
+* Name required
+* Name length
+* Slug required or generate safely
+* Slug uniqueness
+* SKU uniqueness where provided
+* Price required
+* Price must be greater than or equal to zero
+* Currency should default to INR
+* Description length
+* Image URL format where provided
+
+Never accept `created_by`, `updated_by`, or delete fields from the request body.
+
+## Update Product
+
+Admin only.
+
+* Support safe full or partial update according to the chosen route design.
+* Do not update immutable historical Order Item values.
+* Prevent duplicate slug or SKU.
+* Apply `updated_by`.
+
+## Product Status
+
+Admin only.
+
+Allow activation or deactivation.
+
+Do not use status update as physical deletion.
+
+## Delete Product
+
+Admin only.
+
+Use soft delete.
+
+Do not delete existing order history.
+
+Return conflict where the operation violates a documented business rule.
+
+---
+
+# Cart APIs
+
+Implement:
+
+```text
+GET    /api/v1/cart
+POST   /api/v1/cart/items
+PATCH  /api/v1/cart/items/:id
+DELETE /api/v1/cart/items/:id
+DELETE /api/v1/cart
+```
+
+Customer authentication required.
+
+## View Cart
+
+Return only the authenticated customer’s active cart items.
+
+Include:
+
+* Product ID
+* Product name
+* Product SKU
+* Unit price
+* Quantity
+* Line total
+* Cart total
+* Currency
+* Cart item ID
+
+Cart totals must be calculated from trusted current product data.
+
+Do not trust price or amount from the frontend.
+
+## Add Cart Item
+
+Request body:
+
+```json
+{
+  "productId": 1,
+  "quantity": 2
+}
+```
+
+Rules:
+
+* Product must exist.
+* Product must be active.
+* Product must not be deleted.
+* Quantity must be greater than zero.
+* Enforce a reasonable maximum quantity.
+* If the same active product already exists in the cart, update the quantity or return a clear conflict according to documented behavior.
+* Handle previously soft-deleted cart rows safely.
+* Apply audit fields.
+
+## Update Cart Item
+
+Request body:
+
+```json
+{
+  "quantity": 3
+}
+```
+
+Rules:
+
+* Customer can update only their own cart item.
+* Quantity must be positive.
+* Product must remain active.
+* Apply audit fields.
+
+## Remove Cart Item
+
+* Customer can remove only their own cart item.
+* Use soft delete.
+* Return 404 for inaccessible records.
+
+## Clear Cart
+
+* Soft-delete all active cart items for the authenticated customer.
+* Use a transaction.
+* Return the number of cleared items.
+
+---
+
+# Order APIs
+
+Implement:
+
+```text
+POST /api/v1/orders
+GET  /api/v1/orders
+GET  /api/v1/orders/:id
+GET  /api/v1/orders/:id/items
+PATCH /api/v1/orders/:id/status
+```
+
+## Create Order
+
+Customer authentication required.
+
+Create an application order from the authenticated customer’s active cart.
+
+Use a Sequelize transaction.
+
+Required flow:
+
+```text
+Load active cart items
+→ Lock or safely validate cart rows where practical
+→ Load active product data
+→ Validate products
+→ Calculate trusted subtotal
+→ Calculate trusted total
+→ Generate unique application order number
+→ Create Order
+→ Create Order Item snapshots
+→ Soft-delete or clear cart items
+→ Commit transaction
+```
+
+Do not call Razorpay APIs in Part 3.
+
+Order Item snapshots must include:
+
+* Product name
+* Product SKU
+* Unit price
+* Quantity
+* Line total
+
+Do not trust:
+
+* Product price
+* Subtotal
+* Total amount
+* Currency
+* User ID
+* Order number
+
+from the frontend.
+
+Initial order status:
+
+```text
+PENDING
+```
+
+Initial payment status:
+
+```text
+PENDING
+```
+
+Return the created application order.
+
+## Order List
+
+Customer:
+
+* View only their own orders.
+
+Admin:
+
+* View all orders.
+
+Support:
+
+* Pagination
+* Search by order number
+* Filter by status
+* Filter by payment status
+* Filter by date range
+* Sorting
+
+## Order Details
+
+Customer can view only their own order.
+
+Admin can view any order.
+
+Include:
+
+* Order header
+* Order Item snapshots
+* Payment summary where available
+* Audit-safe information
+
+Do not expose sensitive payment fields.
+
+## Order Status Update
+
+Admin only.
+
+Allowed transitions must be validated.
+
+Example:
+
+```text
+PENDING → CONFIRMED
+CONFIRMED → PROCESSING
+PROCESSING → COMPLETED
+PENDING → CANCELLED
+CONFIRMED → CANCELLED
+```
+
+Do not allow arbitrary backward or invalid transitions.
+
+Part 3 should not automatically mark an order paid.
+
+Payment-related status changes belong to Part 5.
+
+---
+
+# Payment APIs
+
+Implement database-backed APIs only.
+
+Do not call Razorpay APIs in Part 3.
+
+Implement:
+
+```text
+GET /api/v1/payments
+GET /api/v1/payments/:id
+GET /api/v1/orders/:orderId/payments
+```
+
+Optional internal preparation endpoint may be created only if documented and must not contact Razorpay.
+
+Customer:
+
+* View only their own payment records.
+* View payments belonging to their own orders.
+
+Admin:
+
+* View all payment records.
+* Filter and search payments.
+
+Support filters:
+
+* Payment status
+* Provider
+* Order ID
+* Razorpay Order ID
+* Razorpay Payment ID
+* Date range
+
+Never return:
+
+* Full stored signature unless explicitly required
+* Sensitive metadata
+* Secrets
+* Card information
+* Banking credentials
+
+Use safe response DTOs or serializers where practical.
+
+---
+
+# Payment History
+
+Use the Payment model as the primary payment history source.
+
+Implement:
+
+```text
+GET /api/v1/payments/history
+```
+
+Customer:
+
+* Return only authenticated customer payment history.
+
+Admin:
+
+* May retrieve all payment history through the standard payment list endpoint.
+
+Support:
+
+* Pagination
+* Status filter
+* Date range
+* Order number search
+* Sorting
+
+Return:
+
+* Application order number
+* Provider
+* Amount
+* Currency
+* Status
+* Method where available
+* Created date
+* Paid date where available
+
+---
+
+# Payment Log APIs
+
+Implement Admin-only APIs:
+
+```text
+GET /api/v1/payment-logs
+GET /api/v1/payment-logs/:id
+GET /api/v1/payments/:paymentId/logs
+```
+
+Support:
+
+* Pagination
+* Payment ID
+* Order ID
+* Event type
+* Request ID
+* Date range
+* Sorting
+
+Do not expose:
+
+* Secrets
+* Passwords
+* JWTs
+* Raw card information
+* Full sensitive request payloads
+
+Payment logs should be read-only through public APIs.
+
+Do not create manual log mutation APIs unless explicitly documented.
+
+---
+
+# Dashboard APIs
+
+Implement:
+
+```text
+GET /api/v1/dashboard/customer
+GET /api/v1/dashboard/admin
+```
+
+## Customer Dashboard
+
+Customer authentication required.
+
+Return only the authenticated customer’s summary:
+
+* Active cart item count
+* Total orders
+* Pending orders
+* Completed orders
+* Successful payments
+* Failed payments
+* Pending payments
+* Total paid amount
+
+## Admin Dashboard
+
+Admin only.
+
+Return:
+
+* Total active products
+* Total customers
+* Total orders
+* Pending orders
+* Completed orders
+* Cancelled orders
+* Successful payments
+* Failed payments
+* Pending payments
+* Total collected amount
+* Recent orders
+* Recent payments
+
+Use aggregate queries efficiently.
+
+Exclude deleted records where appropriate.
+
+Do not calculate revenue from failed or pending payments.
+
+Define which payment statuses count as successful.
+
+---
+
+# Validation Requirements
+
+Use `express-validator` or existing project validation patterns.
+
+Validate:
+
+* Path IDs as positive integers.
+* Pagination parameters.
+* Search lengths.
+* Sort columns.
+* Sort order.
+* Date ranges.
+* Product fields.
+* Cart quantities.
+* Order filters.
+* Status values.
+* Ownership-sensitive parameters.
+
+Return field-level validation errors.
+
+Do not allow unknown status values.
+
+Do not accept audit fields from request bodies.
+
+---
+
+# Transactions and Concurrency
+
+Use transactions for:
+
+* Order creation
+* Order Item creation
+* Cart clearing after order creation
+* Multi-record soft deletion
+* Related status updates where multiple tables are changed
+
+Use row locking or equivalent protection where useful for order creation.
+
+Avoid duplicate order creation where the same request may be retried.
+
+A simple idempotency strategy may be prepared only if documented.
+
+Do not add unnecessary distributed-lock complexity.
+
+---
+
+# Error Handling
+
+Reuse centralized error handling.
+
+Handle:
+
+* Validation errors
+* Authentication errors
+* Authorization errors
+* Not-found errors
+* Conflict errors
+* Invalid status transitions
+* Sequelize validation errors
+* Sequelize unique constraint errors
+* Foreign key errors
+* Transaction failures
+* Database errors
+* Internal server errors
+
+Do not expose stack traces in production.
+
+---
+
+# Logging
+
+Reuse Winston and request ID middleware.
+
+Log:
+
+* Product create/update/delete
+* Cart item add/update/remove
+* Cart clear
+* Order creation
+* Order status update
+* Payment history access where useful
+* Admin payment log access
+* Validation failures
+* Authorization failures
+* Transaction failures
+* Database errors
+
+Include:
+
+* Request ID
+* Authenticated user ID
+* Action name
+* Resource ID where available
+* Safe status information
+
+Do not log:
+
+* Passwords
+* JWT tokens
+* Razorpay Key Secret
+* Webhook Secret
+* Full payment signatures
+* Card information
+* Sensitive request bodies
+
+---
+
+# Swagger Documentation
+
+Update Swagger at:
+
+```text
+http://localhost:5000/api-docs/
+```
+
+Document all Part 3 APIs.
+
+Include:
+
+* Tags
+* Route descriptions
+* Authentication requirements
+* Role requirements
+* Query parameters
+* Path parameters
+* Request body schemas
+* Response schemas
+* Pagination schemas
+* Validation errors
+* Authorization errors
+* Not-found responses
+* Conflict responses
+* Example payloads
+
+Clearly mark that:
+
+* Razorpay API integration is not implemented in Part 3.
+* Payments are database-backed records only.
+* Payment completion belongs to Part 5.
+
+---
+
+# API Tests
+
+Add meaningful tests for:
+
+## Products
+
+* Customer can list active products.
+* Admin can create product.
+* Customer cannot create product.
+* Duplicate SKU or slug rejected.
+* Product validation works.
+* Admin can update product.
+* Admin can soft-delete product.
+* Deleted product excluded from customer list.
+
+## Cart
+
+* Customer can add item.
+* Duplicate item behavior works.
+* Invalid quantity rejected.
+* Inactive product rejected.
+* Customer can view own cart.
+* Customer cannot access another user’s item.
+* Update quantity works.
+* Remove item works.
+* Clear cart works.
+* Trusted totals are calculated from product data.
+
+## Orders
+
+* Empty cart order rejected.
+* Order creation works.
+* Order total calculated from product data.
+* Order Items preserve product snapshots.
+* Cart clears after order creation.
+* Transaction rollback works on failure.
+* Customer sees only own orders.
+* Admin sees all orders.
+* Unauthorized order access rejected.
+* Invalid status transition rejected.
+* Valid Admin status transition works.
+
+## Payments
+
+* Customer sees only own payments.
+* Admin sees all payments.
+* Payment details ownership is enforced.
+* Sensitive fields excluded.
+* Payment history pagination works.
+
+## Dashboard
+
+* Customer summary is scoped correctly.
+* Admin summary requires Admin role.
+* Aggregates exclude deleted records.
+* Failed/pending payments are not counted as collected amount.
+
+## Regression
+
+Existing tests must continue to pass:
+
+* Registration
+* Login
+* Profile
+* Health
+* Database model tests
+* Soft-delete tests
+* Constraint tests
+
+Do not use real Razorpay API calls in tests.
+
+---
+
+# Documentation
+
+Update or create documentation for:
+
+* Backend API architecture
+* Route list
+* Role permissions
+* Ownership rules
+* Validation rules
+* Product API examples
+* Cart API examples
+* Order creation flow
+* Payment history behavior
+* Dashboard response examples
+* Error response examples
+* Swagger URL
+* Local testing commands
+* Postman or curl examples
+* Known limitations
+* Part 4 readiness
+
+Preserve existing Part 1 and Part 2 documentation.
+
+---
+
+# Before Making Changes
+
+1. Open the project root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+2. Run:
+
+```cmd
+git status
+```
+
+3. Inspect the complete repository.
+4. Read both Part 3 files completely.
+5. Inspect existing:
+
+   * Routes
+   * Controllers
+   * Services
+   * Middlewares
+   * Validations
+   * Models
+   * Associations
+   * Migrations
+   * Seeders
+   * Authentication flow
+   * Response helpers
+   * Error middleware
+   * Request ID middleware
+   * Winston logger
+   * Swagger configuration
+   * Existing tests
+6. Confirm Part 1 and Part 2 are working.
+7. Identify existing dirty files before making changes.
+8. Summarize the implementation plan.
+9. List files expected to be created or modified.
+10. Identify any API or schema conflicts.
+11. Do not start Part 4.
+
+---
+
+# After Implementation
+
+1. List all created files.
+2. List all modified files.
+3. Run backend lint.
+4. Run all backend tests.
+5. Run migrations.
+6. Check migration status.
+7. Run seeders where needed.
+8. Start the backend locally.
+9. Verify health endpoint.
+10. Verify Swagger.
+11. Verify Admin login.
+12. Verify Customer login.
+13. Verify Product APIs.
+14. Verify Cart APIs.
+15. Verify Order APIs.
+16. Verify Payment history APIs.
+17. Verify Dashboard APIs.
+18. Verify role restrictions.
+19. Verify ownership restrictions.
+20. Verify audit fields.
+21. Verify soft delete.
+22. Verify pagination, filtering, sorting, and search.
+23. Verify frontend production build still passes.
+24. Verify Docker Compose configuration remains valid.
+25. Confirm no Razorpay payment processing was implemented.
+26. Confirm no frontend business pages were implemented.
+27. Provide exact Windows CMD commands.
+28. List remaining manual steps.
+29. Do not start Part 4 automatically.
+
+---
+
+# Suggested Verification Commands
+
+From the backend folder:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
+
+npm install
+npm run lint
+npm run db:migrate
+npm run db:migrate:status
+npm run db:seed
+npm test
+npm run dev
+```
+
+Frontend regression build:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\frontend
+
+npm run lint
+npm run build
+```
+
+Docker configuration:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+
+docker compose config
+```
+
+Do not use Docker as the only verification path.
+
+Local PostgreSQL, local backend, and frontend regression build should be verified first.
+
+---
+
+# Final Codex Output Format
+
+Provide the final implementation report using these headings:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Existing Part 1 and Part 2 Preservation
+
+## Backend Architecture
+
+## Routes Registered
+
+## Controllers
+
+## Services
+
+## Validations
+
+## Authentication Integration
+
+## Role Authorization
+
+## Ownership Rules
+
+## Product APIs
+
+## Cart APIs
+
+## Order APIs
+
+## Payment APIs
+
+## Payment History
+
+## Payment Logs
+
+## Dashboard APIs
+
+## Audit Fields
+
+## Soft Delete
+
+## Transactions
+
+## Search Filtering Sorting and Pagination
+
+## Logging
+
+## Error Handling
+
+## Swagger
+
+## Tests
+
+## Verification Results
+
+## Security Verification
+
+## Frontend Regression Check
+
+## Docker Configuration Check
+
+## Windows CMD Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Part 4 Readiness
+```
+
+Do not claim that a command, API, test, build, or verification passed unless it was actually executed successfully.
+
+If PostgreSQL, credentials, services, dependencies, or environment variables are unavailable, report the affected verification as not configured or not verified.
+
+Do not make unrelated changes.
+
+Do not implement Part 4.
+
+Do not implement full Razorpay integration.
+
+Do not start Part 5.
