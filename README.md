@@ -1,266 +1,228 @@
 # Payment Gateway
 
-Full-stack payment gateway application with a Next.js customer/admin frontend, Express REST APIs, PostgreSQL, and Razorpay Test Mode integration.
+Payment Gateway is a full-stack payment platform with customer and administrative modules. It provides product browsing, cart-based checkout, Razorpay Test Mode payments, order tracking, payment history, administrative product and order management, and operational tooling for containerized deployment.
 
-## Project Status
+The application is built with a Next.js frontend, Express.js REST APIs, Sequelize ORM, PostgreSQL, Docker, and GitHub Actions.
 
-✅ Part 1 — Project Setup
-✅ Part 2 — Database Design
-✅ Part 3 — Backend APIs
-✅ Part 4 — Frontend
-✅ Part 5 — Razorpay Test Mode Integration
-✅ Part 6 — DevOps Foundation
+## Features
 
-Current status: Interview-ready and local demo-ready.
+### Authentication
 
-Razorpay integration uses Test Mode only. No real money is charged.
+- User registration
+- Login
+- JWT authentication
+- Role-based authorization
+- Password hashing
 
-## Final Verification Status
+### Customer Features
 
-| Verification | Status |
-|---|---|
-| Backend lint | Passed |
-| Backend tests | 29 passed |
-| Frontend lint | Passed |
-| Frontend tests | 15 passed |
-| Frontend production build | Passed in Docker image build; local Node 22 verification recommended |
-| Backend Docker image build | Passed |
-| Frontend Docker image build | Passed |
-| Docker Compose | PostgreSQL, Backend, Frontend healthy |
-| Backend health API | HTTP 200 |
-| Swagger | HTTP 200 |
-| Frontend | HTTP 200 |
-| PostgreSQL migrations | All up |
-| Docker containers | Non-root |
-| Security workflows | Configured |
-| GitHub Actions | Pending remote rerun |
-| Razorpay Test Mode checkout | Requires user Test credentials |
+- Browse products
+- View product details
+- Manage shopping cart
+- Checkout
+- Razorpay Test Mode payment
+- Order history
+- Payment history
+- User profile
+- Dashboard
+
+### Admin Features
+
+- Dashboard
+- Product management
+- Order management
+- Payment management
+- Payment logs
+- User management foundation through role-based access
 
 ## Architecture
 
 ```text
 Customer Browser
--> Next.js Frontend
--> Express REST APIs
--> Sequelize ORM
--> PostgreSQL
-
-Checkout
--> Backend Razorpay Order creation
--> Razorpay Checkout
--> Backend signature verification
--> Payment and Order status update
-
-Webhook
--> Raw request body
--> Signature verification
--> Idempotent event processing
--> Payment logs
+  |
+  v
+Next.js Frontend
+  |
+  v
+REST APIs
+  |
+  v
+Express.js
+  |
+  v
+Sequelize ORM
+  |
+  v
+PostgreSQL
 ```
 
-The system includes a Customer Panel, Admin Panel, role-based authorization, audit fields, soft delete, Docker support, and CI/CD workflows.
+The backend owns authentication, authorization, payment amount calculation, Razorpay order creation, payment signature verification, webhook validation, logging, and audit metadata. The frontend consumes the REST APIs and exposes separate customer and admin interfaces.
 
-## Features
-
-### Customer Features
-
-- Register and login
-- Browse products
-- Product details
-- Add to cart
-- Buy Now
-- Checkout
-- Razorpay Test Mode payment
-- Orders
-- Payments
-- Profile
-- Customer dashboard
-
-### Admin Features
-
-- Admin dashboard
-- Product CRUD
-- Product status and soft delete
-- All orders
-- Order status updates
-- Payments
-- Payment logs
-- Admin profile
-
-### Technical Features
-
-- JWT authentication
-- Role authorization
-- PostgreSQL
-- Sequelize migrations
-- Audit fields
-- Soft delete
-- Centralized error handling
-- Winston logging
-- Request ID
-- Swagger
-- Razorpay signature verification
-- Webhook verification
-- Idempotency
-- Docker Compose
-- GitHub Actions
-- CodeQL
-- Trivy
-- Gitleaks
-- Dependabot
-- Backup/restore scripts
-- Graceful shutdown
+Docker and Docker Compose provide containerized local and deployment-ready runtime foundations. GitHub Actions support CI, Docker image builds, dependency checks, and security scanning.
 
 ## Technology Stack
 
 | Area | Technology |
 |---|---|
-| Backend | Node.js, Express.js, Sequelize |
+| Backend | Node.js, Express.js |
 | Frontend | Next.js 15, React, Tailwind CSS, Axios |
 | Database | PostgreSQL 16 |
 | Authentication | JWT, bcrypt |
-| Payments | Razorpay Test Mode |
-| API Docs | Swagger/OpenAPI |
-| Logging | Winston |
-| Containers | Docker, Docker Compose |
+| Payment Gateway | Razorpay Test Mode |
+| ORM | Sequelize |
+| Logging | Winston, request IDs |
+| Documentation | Swagger/OpenAPI |
+| Containerization | Docker, Docker Compose |
 | CI/CD | GitHub Actions |
 | Security | CodeQL, Trivy, Gitleaks, npm audit, Dependabot |
-| Runtime | Node.js 22 for CI and Docker |
 
-Node.js 22 is the supported project runtime. Local Node 26 may show engine warnings or different tool behavior.
+## Prerequisites
 
-## Local Setup
-
-### Prerequisites
-
-- Node.js 22
+- Node.js 22.x
 - npm 10+
-- PostgreSQL 16
-- Docker Desktop
+- PostgreSQL 16+
+- Docker Desktop or Docker Engine
 - Git
+- Razorpay Test Account
 
-### Backend
+Node.js 22 is the supported runtime for this project.
 
-```cmd
-cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
-copy .env.example .env
-npm install
-npm run db:migrate
-npm run db:seed
-npm run dev
+## Clone the Repository
+
+```bash
+git clone <repository-url>
+cd Payment-Gateway
 ```
 
-### Frontend
+## PostgreSQL Setup
 
-```cmd
-cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\frontend
-copy .env.example .env.local
-npm install
-npm run dev
+The application can use either a local PostgreSQL instance or the PostgreSQL service provided by Docker Compose.
+
+### Option A: Local PostgreSQL
+
+Create a PostgreSQL user and database:
+
+```sql
+CREATE USER payment_user WITH PASSWORD 'replace_with_secure_password';
+
+CREATE DATABASE payment_gateway
+OWNER payment_user;
+
+GRANT ALL PRIVILEGES
+ON DATABASE payment_gateway
+TO payment_user;
 ```
 
-### URLs
+Developers may use their own PostgreSQL username, password, and database name. The backend environment variables must match the database credentials that were created.
 
-```text
-Frontend: http://localhost:3000
-Backend: http://localhost:5000
-Swagger: http://localhost:5000/api-docs/
-Health: http://localhost:5000/api/v1/health
+Use `DB_HOST=localhost` when the backend runs directly on the host machine.
+
+### Option B: Docker PostgreSQL
+
+Docker Compose can start PostgreSQL automatically:
+
+```bash
+docker compose up -d postgres
 ```
 
-## Docker Setup
+Use `DB_HOST=postgres` when the backend runs through Docker Compose because containers communicate through Docker service names.
 
-```cmd
-cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+Do not delete Docker volumes unless troubleshooting disposable data.
 
-docker compose up -d
-docker compose ps
-```
+## Backend Environment Setup
 
-Expected:
+Create the backend environment file:
 
-```text
-postgres healthy
-backend healthy
-frontend healthy
-```
-
-Stop:
-
-```cmd
-docker compose down
-```
-
-Do not run `docker compose down -v` unless Docker database data can be deleted.
-
-## Verification Commands
-
-Backend:
-
-```cmd
+```bash
 cd backend
-npm run lint
-npm test
-npm run db:migrate:status
+cp .env.example .env
 ```
 
-Frontend:
+Windows:
 
 ```cmd
-cd frontend
-npm run lint
-npm test
-npm run build
+copy .env.example .env
 ```
 
-Docker:
-
-```cmd
-docker compose config
-docker build -t payment-gateway-backend:local ./backend
-docker build -t payment-gateway-frontend:local ./frontend
-```
-
-## Demo Credentials
-
-Admin:
-
-```text
-Email: admin@example.com
-Password: Admin@12345
-```
-
-Customer:
-
-```text
-Register a new Customer account from /register.
-```
-
-Demo credentials are for local development only and must not be used in production.
-
-## Razorpay Test Mode Setup
-
-Backend `.env`:
+Example backend configuration:
 
 ```env
+NODE_ENV=development
+PORT=5000
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=payment_gateway
+DB_USER=payment_user
+DB_PASSWORD=replace_with_secure_password
+
+JWT_SECRET=replace_with_long_random_secret
+JWT_EXPIRES_IN=1d
+
 RAZORPAY_KEY_ID=rzp_test_xxxxxxxxx
-RAZORPAY_KEY_SECRET=xxxxxxxxx
-RAZORPAY_WEBHOOK_SECRET=xxxxxxxxx
+RAZORPAY_KEY_SECRET=replace_with_test_key_secret
+RAZORPAY_WEBHOOK_SECRET=replace_with_webhook_secret
+
+CORS_ORIGIN=http://localhost:3000
+LOG_LEVEL=info
+LOG_TO_FILES=true
 ```
 
-Frontend `.env.local`:
+Use Razorpay Test Mode credentials only. Do not commit `.env`.
+
+## Frontend Environment Setup
+
+Create the frontend environment file:
+
+```bash
+cd frontend
+cp .env.example .env.local
+```
+
+Windows:
+
+```cmd
+copy .env.example .env.local
+```
+
+Example frontend configuration:
 
 ```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxx
 ```
 
-Webhook URL:
+Never add `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` to frontend environment files.
 
-```text
-https://your-public-domain/api/v1/webhooks/razorpay
+## Razorpay Test Mode Setup
+
+1. Create or sign in to a Razorpay account.
+2. Switch the dashboard to Test Mode.
+3. Open Account & Settings or API Keys.
+4. Generate Test API Keys.
+5. Copy the Key ID and Key Secret.
+6. Add the Key ID and Key Secret to `backend/.env`.
+7. Add only the Key ID to `frontend/.env.local`.
+8. Create a webhook secret in the Razorpay dashboard.
+9. Add that secret to `RAZORPAY_WEBHOOK_SECRET`.
+
+The Key ID is public and may be used by the frontend. The Key Secret and Webhook Secret must remain backend-only.
+
+## Razorpay Webhook Setup
+
+Razorpay cannot send webhooks directly to `localhost`. For local testing, use a secure tunnel such as ngrok:
+
+```bash
+ngrok http 5000
 ```
 
-Events:
+Webhook URL format:
+
+```text
+https://your-public-url/api/v1/webhooks/razorpay
+```
+
+Subscribe to:
 
 ```text
 payment.authorized
@@ -269,76 +231,420 @@ payment.failed
 order.paid
 ```
 
-Use Razorpay Test Mode only. Never expose `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` in frontend code or browser environment variables. Local webhook testing requires a tunnel such as ngrok.
+The webhook secret configured in Razorpay must match `RAZORPAY_WEBHOOK_SECRET` in `backend/.env`.
 
-## Demo Flow
+## Backend Installation and Database Initialization
 
-1. Open Home page
-2. Register/Login as Customer
-3. Browse Products
-4. Add Product to Cart
-5. Create Order
-6. Open Razorpay Test Checkout
-7. Verify Payment
-8. Show Customer Orders and Payments
-9. Login as Admin
-10. Show Admin Dashboard
-11. Show Product Management
-12. Show Orders
-13. Show Payments and Payment Logs
-14. Show Swagger
-15. Show Docker containers
-16. Explain CI/CD and security workflows
-
-## Project Folder Structure
-
-```text
-Payment-Gateway/
-├── backend/
-├── frontend/
-├── docs/
-├── postman/
-├── scripts/
-├── ops/
-├── .github/
-├── docker-compose.yml
-├── docker-compose.prod.yml
-└── README.md
+```bash
+cd backend
+npm install
+npm run db:migrate
+npm run db:seed
+npm run dev
 ```
 
-## CI/CD Status
+`db:migrate` creates or updates the database schema. `db:seed` adds development roles, an Admin account, and sample products. Seeders should be used only in development unless explicitly reviewed.
 
-GitHub Actions workflows are configured for CI, Docker build, CodeQL, Trivy, Gitleaks, npm audit, and Dependabot.
+Development Admin account:
 
-Remote workflow verification is pending after the latest action-version updates.
+```text
+Email: admin@example.com
+Password: Admin@12345
+```
 
-## Known Limitations
+Development credentials must be changed or removed before production deployment.
 
-- Razorpay Test Mode only
-- No refunds
-- No settlements
-- No subscriptions
-- No payouts
-- No Live Mode
-- Staging deployment target not configured
-- GitHub Actions remote status must be verified
-- Demo credentials are development-only
+## Frontend Installation and Start
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Local development URLs:
+
+```text
+Frontend: http://localhost:3000
+Backend: http://localhost:5000
+Swagger: http://localhost:5000/api-docs/
+Health API: http://localhost:5000/api/v1/health
+```
+
+## Running Frontend and Backend Together
+
+Run the backend and frontend in separate terminals. PostgreSQL must already be running.
+
+Startup order:
+
+```text
+PostgreSQL
+  |
+  v
+Backend
+  |
+  v
+Frontend
+```
+
+Terminal 1:
+
+```bash
+cd backend
+npm run dev
+```
+
+Terminal 2:
+
+```bash
+cd frontend
+npm run dev
+```
+
+## Docker Setup
+
+Start all services:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+Expected services:
+
+```text
+postgres
+backend
+frontend
+```
+
+Stop services:
+
+```bash
+docker compose down
+```
+
+Do not run `docker compose down -v` unless the Docker database data can be deleted.
+
+Docker Compose uses container service names internally, so the backend connects to PostgreSQL with `DB_HOST=postgres` in the Compose network.
+
+## Application Flow
+
+Customer flow:
+
+```text
+Register/Login
+  |
+  v
+Browse Products
+  |
+  v
+Add to Cart
+  |
+  v
+Checkout
+  |
+  v
+Create Order
+  |
+  v
+Razorpay Test Payment
+  |
+  v
+Payment Verification
+  |
+  v
+Orders and Payments
+```
+
+Admin flow:
+
+```text
+Admin Login
+  |
+  v
+Dashboard
+  |
+  v
+Product Management
+  |
+  v
+Order Management
+  |
+  v
+Payments
+  |
+  v
+Payment Logs
+```
+
+## Validation and Health Checks
+
+Check backend health:
+
+```bash
+curl http://localhost:5000/api/v1/health
+```
+
+Expected health status:
+
+```text
+Application status healthy
+Database connected
+```
+
+Swagger documentation is available at:
+
+```text
+http://localhost:5000/api-docs/
+```
+
+## API Documentation
+
+The backend exposes Swagger/OpenAPI documentation at:
+
+```text
+/api-docs
+```
+
+The API documentation includes authentication, product, cart, order, payment, webhook, dashboard, and payment-log endpoints.
+
+## Database
+
+The application uses PostgreSQL with Sequelize models and migrations. Database support includes:
+
+- Versioned migrations
+- Seeders for local bootstrap data
+- Audit fields
+- Soft delete support
+- Relational constraints for users, products, carts, orders, payments, logs, and webhook events
+
+## Payment Flow
+
+```text
+Customer
+  |
+  v
+Cart
+  |
+  v
+Order
+  |
+  v
+Backend Order Creation
+  |
+  v
+Razorpay Checkout
+  |
+  v
+Payment Verification
+  |
+  v
+Webhook Verification
+  |
+  v
+Payment Logs
+  |
+  v
+Order Completion
+```
+
+Payment amounts are calculated by the backend. Browser-side payment callbacks are not trusted until the backend verifies the Razorpay signature. Webhooks are verified using the raw request body and processed idempotently.
+
+## Security
+
+- JWT authentication
+- bcrypt password hashing
+- Role-based authorization
+- Backend-owned payment amount calculation
+- Razorpay payment signature verification
+- Razorpay webhook signature validation
+- Request validation
+- Centralized error handling
+- Winston logging
+- Request IDs
+- Backend-only secrets
+
+## DevOps
+
+- Dockerized backend and frontend
+- Docker Compose orchestration
+- Production-oriented Compose foundation
+- GitHub Actions workflows
+- CodeQL scanning
+- Trivy scanning
+- Gitleaks secret scanning
+- Dependabot updates
+- Backup and restore scripts
+- Operational documentation
+
+## Environment Variables
+
+### Backend
+
+```text
+NODE_ENV
+PORT
+
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASSWORD
+
+JWT_SECRET
+JWT_EXPIRES_IN
+
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+RAZORPAY_CURRENCY
+RAZORPAY_COMPANY_NAME
+RAZORPAY_CHECKOUT_DESCRIPTION
+
+CORS_ORIGIN
+LOG_LEVEL
+LOG_TO_FILES
+TRUST_PROXY
+```
+
+### Frontend
+
+```text
+NEXT_PUBLIC_API_BASE_URL
+NEXT_PUBLIC_RAZORPAY_KEY_ID
+NEXT_PUBLIC_APP_NAME
+NEXT_PUBLIC_APP_ENV
+NEXT_PUBLIC_APP_VERSION
+```
+
+Do not expose backend secrets, Razorpay key secrets, webhook secrets, database credentials, or JWT secrets in frontend environment variables.
+
+## Testing
+
+Backend:
+
+```bash
+cd backend
+npm run lint
+npm test
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm test
+npm run build
+```
+
+Docker validation:
+
+```bash
+docker compose config
+```
+
+The project includes unit tests, integration tests, API tests, Docker validation, linting, and security scanning.
+
+## Troubleshooting
+
+### PostgreSQL authentication failed
+
+Check:
+
+```text
+DB_USER
+DB_PASSWORD
+DB_NAME
+DB_HOST
+DB_PORT
+```
+
+### Backend cannot reach PostgreSQL in Docker
+
+Use:
+
+```text
+DB_HOST=postgres
+```
+
+### Razorpay Checkout does not open
+
+Check:
+
+```text
+NEXT_PUBLIC_RAZORPAY_KEY_ID
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+```
+
+Restart backend and frontend after changing environment variables.
+
+### Webhook verification failed
+
+Check:
+
+```text
+RAZORPAY_WEBHOOK_SECRET
+Webhook URL
+x-razorpay-signature
+Raw request body handling
+```
+
+### Frontend cannot call backend
+
+Check:
+
+```text
+NEXT_PUBLIC_API_BASE_URL
+CORS_ORIGIN
+Backend health endpoint
+```
+
+### Docker database role mismatch
+
+Refer to:
+
+```text
+docs/docker-compose-startup-recovery.md
+```
 
 ## Security Notes
 
-- Real `.env` files are ignored
-- Secrets remain backend-only
-- Payment amount is calculated by backend
-- Payment success requires backend signature verification
-- Webhooks use raw-body signature verification
-- Containers run as non-root
-- PostgreSQL is not public in production Compose
-- Production seeders are not automatic
-- Do not commit logs or backups
+- Never commit `.env` or `.env.local`.
+- Never expose Razorpay Key Secret.
+- Never expose Webhook Secret.
+- Never store card numbers, CVV, or OTP.
+- Payment amount is calculated on the backend.
+- Payment success requires backend signature verification.
+- Webhooks require raw-body signature verification.
+- Change development credentials before deployment.
 
-## Operational Documentation
+## Folder Structure
 
-- `docs/deployment.md`
-- `docs/operations-runbook.md`
-- `docs/backup-and-restore.md`
-- `docs/security-and-secrets.md`
+```text
+backend/
+frontend/
+docs/
+postman/
+scripts/
+ops/
+.github/
+README.md
+```
+
+## Future Enhancements
+
+- Refund management
+- Subscription payments
+- Settlement reports
+- Multi-currency support
+- Notification services
+- Analytics dashboard
+- Expanded user administration
+- Production observability integrations
+
+## License
+
+MIT License

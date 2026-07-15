@@ -18,3 +18,4 @@ backups/
 .env.staging
 ops/nginx/certs/*
 !ops/nginx/certs/.gitkeep
+docs/
