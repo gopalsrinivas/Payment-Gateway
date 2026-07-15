@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import CustomerPageHeader from "../../components/customer/CustomerPageHeader";
 import ProductCard from "../../components/products/ProductCard";
 import ProductFilters from "../../components/products/ProductFilters";
 import EmptyState from "../../components/ui/EmptyState";
@@ -40,10 +41,7 @@ export default function ProductsPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-ink">Products</h1>
-        <p className="mt-2 text-slate-600">Browse active demo products. Checkout totals remain backend-trusted.</p>
-      </div>
+      <CustomerPageHeader title="Products" description="Browse active demo products. Checkout totals remain backend-trusted and Razorpay runs in Test Mode." />
       <ProductFilters filters={filters} onChange={updateFilters} onReset={reset} />
       {loading ? <Spinner label="Loading products" /> : null}
       {error ? <ErrorState message={error.message} requestId={error.requestId} onRetry={() => updateFilters({ page: filters.page })} /> : null}

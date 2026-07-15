@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
+import CustomerPageHeader from "../../components/customer/CustomerPageHeader";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import ErrorState from "../../components/ui/ErrorState";
@@ -38,17 +39,17 @@ export default function PaymentsPage() {
   return (
     <ProtectedRoute>
       <section className="space-y-6">
-        <h1 className="text-3xl font-bold text-ink">Payment history</h1>
+        <CustomerPageHeader title="My Payments" description="Review customer-safe Razorpay Test Mode payment records and backend verification status." />
         {loading ? <Spinner label="Loading payments" /> : null}
         {error ? <ErrorState message={error.message} requestId={error.requestId} /> : null}
-        {!loading && !error && data.items.length === 0 ? <EmptyState title="No payments yet" message="That is expected before Part 5 payment execution." /> : null}
+        {!loading && !error && data.items.length === 0 ? <EmptyState title="No payments yet" message="Complete checkout to see verified payment attempts here." /> : null}
         {!loading && !error && data.items.length > 0 ? (
-          <div className="overflow-x-auto rounded-md border bg-white">
+          <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50"><tr><th className="p-3">Order</th><th className="p-3">Provider</th><th className="p-3">Amount</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
               <tbody className="divide-y">
                 {data.items.map((payment) => (
-                  <tr key={payment.id}><td className="p-3">{payment.orderNumber || "N/A"}</td><td className="p-3">{payment.provider}</td><td className="p-3">{formatCurrency(payment.amount, payment.currency)}</td><td className="p-3"><StatusBadge status={payment.status} /></td><td className="p-3">{formatDate(payment.createdAt)}</td><td className="p-3"><Button as={Link} href={`/payments/${payment.id}`} variant="secondary">Details</Button></td></tr>
+                  <tr key={payment.id}><td className="p-3">{payment.orderNumber || "N/A"}</td><td className="p-3">{payment.provider}</td><td className="p-3">{formatCurrency(payment.amount, payment.currency)}</td><td className="p-3"><StatusBadge status={payment.status} /></td><td className="p-3">{formatDate(payment.createdAt)}</td><td className="p-3"><Button as={Link} href={`/payments/${payment.id}`} variant="secondary">View Payment</Button></td></tr>
                 ))}
               </tbody>
             </table>

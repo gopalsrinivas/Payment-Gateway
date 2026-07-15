@@ -4989,3 +4989,1537 @@ Do not make unrelated changes.
 Do not implement full Razorpay integration.
 
 Do not start Part 5.
+
+Part-5 Razorpay Integration
+------------------------------
+Read these files completely before making any changes:
+
+1. `docs/Part-5-Razorpay-Integration-Payment-Gateway.md`
+2. `docs/Codex-Prompt-Part-5-Razorpay-Integration-Payment-Gateway.md`
+
+Continue from the completed Part 1, Part 2, Part 3, and Part 4 implementation.
+
+Implement ONLY Part 5: Razorpay Test Mode integration, backend payment execution, frontend Razorpay Checkout, payment verification, webhook processing, payment status synchronization, idempotency, logging, Swagger documentation, and tests.
+
+Project root:
+
+```text
+D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+Do not create another nested project folder.
+
+---
+
+# Existing Implementation
+
+## Part 1 Completed
+
+* Backend and frontend project foundation
+* PostgreSQL and Sequelize configuration
+* Registration
+* Login
+* Logout
+* Protected profile
+* JWT authentication
+* Role authorization
+* Swagger
+* Winston logging
+* Centralized error handling
+* Razorpay SDK configuration foundation
+* Webhook raw-body route foundation
+* Docker foundation
+* Backend and frontend tests
+
+## Part 2 Completed
+
+* Roles
+* Users
+* Products
+* Cart Items
+* Orders
+* Order Items
+* Payments
+* Payment Logs
+* Webhook Events
+* Audit fields
+* Soft delete
+* Constraints
+* Indexes
+* Sequelize models
+* Associations
+* Seed products
+* Database tests
+
+## Part 3 Completed
+
+Backend APIs for:
+
+* Products
+* Cart
+* Orders
+* Payments
+* Payment History
+* Payment Logs
+* Customer Dashboard
+* Admin Dashboard
+* Search
+* Filtering
+* Sorting
+* Pagination
+* Role and ownership enforcement
+* Swagger
+* Postman collection
+* API tests
+
+## Part 4 Completed
+
+Frontend for:
+
+* Customer Panel
+* Admin Panel
+* Role-based navigation
+* Product listing/details
+* Admin product management
+* Cart
+* Checkout preparation
+* Orders
+* Payments
+* Dashboards
+* Profile
+* Payment success/failure pages
+* Responsive UI
+* Error handling
+* Frontend tests
+* Production build
+
+Preserve all existing working functionality.
+
+---
+
+# Scope
+
+Implement only Razorpay Test Mode payment integration.
+
+Implement:
+
+* Razorpay Order creation
+* Payment initiation
+* Frontend Razorpay Checkout
+* Payment signature verification
+* Payment success handling
+* Payment failure handling
+* Webhook signature verification
+* Webhook event persistence
+* Payment and Order status synchronization
+* Payment logs
+* Duplicate prevention
+* Idempotency
+* Retry-safe processing
+* Swagger documentation
+* Postman examples
+* Backend tests
+* Frontend tests
+* Manual Razorpay Test Mode verification instructions
+
+Do not implement production payments.
+
+Do not implement refunds unless the Part-5 specification explicitly includes a safe foundation only.
+
+Do not implement settlements, payouts, subscriptions, multi-currency, accounting, or reconciliation beyond the documented Part-5 scope.
+
+---
+
+# Important Restrictions
+
+* Use Razorpay Test Mode only.
+* Never expose `RAZORPAY_KEY_SECRET`.
+* Never expose `RAZORPAY_WEBHOOK_SECRET`.
+* Never log Razorpay secrets.
+* Never store card number, CVV, OTP, or banking credentials.
+* Never trust payment amount from the frontend.
+* Never mark payment successful from frontend state alone.
+* Never mark payment successful only because Razorpay Checkout returned success.
+* Backend signature verification is mandatory.
+* Webhook signature verification is mandatory.
+* Do not weaken existing ownership or role authorization.
+* Do not recreate correct migrations or models.
+* Do not change the database schema unless required for a real implementation issue.
+* Explain any schema change before implementing it.
+* Do not use `sequelize.sync()`.
+* Do not make unrelated frontend or backend redesigns.
+* Do not implement Part 6 DevOps automatically.
+
+---
+
+# Payment Architecture
+
+Use this flow:
+
+```text
+Customer Checkout
+→ Frontend Requests Payment Initialization
+→ Backend Loads Trusted Order
+→ Backend Validates Ownership and Status
+→ Backend Calculates Trusted Amount
+→ Backend Creates Razorpay Order
+→ Backend Creates/Updates Local Payment Record
+→ Frontend Receives Safe Checkout Data
+→ Frontend Opens Razorpay Checkout
+→ Razorpay Returns Payment Data
+→ Frontend Sends Payment Data to Backend
+→ Backend Verifies Signature
+→ Backend Updates Payment and Order
+→ Backend Writes Payment Log
+→ Frontend Redirects to Verified Success Page
+```
+
+Webhook flow:
+
+```text
+Razorpay
+→ POST /api/v1/webhooks/razorpay
+→ Read Exact Raw Request Body
+→ Verify Webhook Signature
+→ Persist Webhook Event
+→ Prevent Duplicate Processing
+→ Process Supported Event
+→ Update Payment
+→ Update Order
+→ Write Payment Log
+→ Mark Webhook Processed
+```
+
+---
+
+# Backend Architecture
+
+Use:
+
+```text
+Route
+→ Validation Middleware
+→ Authentication/Authorization Middleware
+→ Controller
+→ Service
+→ Razorpay SDK
+→ Sequelize Models
+→ PostgreSQL
+```
+
+Controllers:
+
+* Accept `req`, `res`, `next`
+* Use async/await
+* Contain only HTTP handling
+* Call services
+* Pass errors to centralized middleware
+* Never contain direct Sequelize queries
+* Never contain signature-generation logic inline if a utility exists
+
+Services:
+
+* Contain business logic
+* Use Sequelize transactions
+* Use Razorpay SDK
+* Validate payment state transitions
+* Enforce ownership
+* Handle duplicate requests
+* Write payment logs
+* Return safe data only
+
+---
+
+# Environment Variables
+
+Backend:
+
+```env
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxx
+RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxxxxxx
+```
+
+Frontend:
+
+```env
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
+```
+
+Rules:
+
+* Only Razorpay Key ID may be exposed to frontend.
+* Secrets must remain backend-only.
+* Do not commit `.env` or `.env.local`.
+* Keep `.env.example` with placeholders only.
+* Validate missing variables clearly.
+* Do not print secrets during startup.
+
+---
+
+# Required Backend Endpoints
+
+Implement or complete:
+
+```text
+POST /api/v1/payments/initialize
+POST /api/v1/payments/verify
+POST /api/v1/payments/failure
+GET  /api/v1/payments/:id
+GET  /api/v1/payments/history
+GET  /api/v1/orders/:orderId/payments
+POST /api/v1/webhooks/razorpay
+```
+
+Optional Admin read-only endpoint where useful:
+
+```text
+GET /api/v1/payments/:id/logs
+```
+
+Do not create public payment mutation APIs beyond the documented flow.
+
+---
+
+# Payment Initialization API
+
+Endpoint:
+
+```text
+POST /api/v1/payments/initialize
+```
+
+Customer authentication required.
+
+Request body:
+
+```json
+{
+  "orderId": 35
+}
+```
+
+Do not accept:
+
+* Amount
+* Currency
+* User ID
+* Order number
+* Payment status
+* Razorpay order ID
+* Audit fields
+
+Required flow:
+
+```text
+Validate authenticated Customer
+→ Load Customer-owned Order
+→ Confirm Order exists
+→ Confirm Order is not deleted
+→ Confirm Order status permits payment
+→ Confirm Order payment_status is not already PAID
+→ Load trusted total_amount and currency
+→ Convert amount to paise
+→ Generate receipt/idempotency reference
+→ Create Razorpay Order
+→ Create or update local Payment row
+→ Create Payment Log
+→ Return safe Checkout configuration
+```
+
+Response should include only safe fields:
+
+```json
+{
+  "paymentId": 10,
+  "applicationOrderId": 35,
+  "applicationOrderNumber": "ORD-20260715-00035",
+  "razorpayOrderId": "order_xxxxx",
+  "razorpayKeyId": "rzp_test_xxxxx",
+  "amount": 99900,
+  "currency": "INR",
+  "name": "Payment Gateway",
+  "description": "Payment for order ORD-20260715-00035"
+}
+```
+
+Do not return the Razorpay Key Secret.
+
+Do not return the Webhook Secret.
+
+---
+
+# Trusted Amount Calculation
+
+Use the backend Order record as the source of truth.
+
+Rules:
+
+* Use `orders.total_amount`.
+* Confirm Order Items exist where required.
+* Do not use frontend cart total.
+* Do not accept frontend amount.
+* Convert INR rupees to paise safely.
+* Avoid floating-point errors.
+
+Recommended conversion:
+
+```javascript
+const amountInPaise = Math.round(Number(order.total_amount) * 100);
+```
+
+Validate:
+
+* Amount is positive.
+* Currency is supported.
+* Amount is within expected range.
+* Existing order amount has not been tampered with.
+
+For INR:
+
+```text
+₹999.00 = 99900 paise
+```
+
+---
+
+# Razorpay Order Creation
+
+Use the configured reusable Razorpay client.
+
+Create Razorpay Order with:
+
+```javascript
+{
+  amount: amountInPaise,
+  currency: "INR",
+  receipt: applicationOrderNumber,
+  notes: {
+    applicationOrderId: String(order.id),
+    applicationOrderNumber: order.order_number,
+    userId: String(order.user_id)
+  }
+}
+```
+
+Rules:
+
+* Use Test Mode credentials.
+* Do not call Razorpay if configuration is missing.
+* Do not log secret values.
+* Log safe Razorpay order ID and request ID.
+* Persist Razorpay order ID.
+* Prevent duplicate Razorpay order creation for the same retry.
+* Reuse an existing valid pending payment attempt where appropriate.
+* Do not create unlimited duplicate pending payment rows.
+
+---
+
+# Idempotency and Duplicate Prevention
+
+Implement a practical idempotency strategy.
+
+Possible strategy:
+
+* One active `CREATED` or `PENDING` payment attempt per application order
+* Reuse existing Razorpay order if still valid
+* Use unique provider identifiers
+* Use transaction and row locking where appropriate
+* Reject payment initialization if Order is already paid
+* Prevent duplicate verification
+* Prevent duplicate webhook processing
+* Prevent duplicate Payment Logs for the same state transition where practical
+
+Do not add unnecessary distributed-lock complexity.
+
+Document the chosen strategy.
+
+---
+
+# Local Payment Record
+
+Use the existing `payments` table.
+
+On initialization, store:
+
+* `order_id`
+* `user_id`
+* `provider = RAZORPAY`
+* `razorpay_order_id`
+* `amount`
+* `currency`
+* `status = CREATED` or `PENDING`
+* audit fields
+
+Do not store:
+
+* Card number
+* CVV
+* OTP
+* Full banking data
+* Secrets
+
+---
+
+# Frontend Razorpay Checkout
+
+Load Razorpay Checkout script safely.
+
+Use:
+
+```text
+https://checkout.razorpay.com/v1/checkout.js
+```
+
+Implement a reusable loader utility.
+
+Rules:
+
+* Load script only when needed.
+* Prevent duplicate script injection.
+* Handle script load failure.
+* Do not expose secret values.
+* Use backend-returned Razorpay Order ID.
+* Use backend-returned amount and currency.
+* Use public Key ID only.
+* Disable payment button while initializing.
+* Prevent rapid duplicate clicks.
+* Show Test Mode notice.
+* Handle modal dismissal.
+* Restore UI state after failure.
+
+Checkout options may include:
+
+```javascript
+{
+  key: razorpayKeyId,
+  amount,
+  currency,
+  name: "Payment Gateway",
+  description,
+  order_id: razorpayOrderId,
+  prefill: {
+    name: customerName,
+    email: customerEmail
+  },
+  notes: {
+    applicationOrderId,
+    applicationOrderNumber
+  },
+  theme: {}
+}
+```
+
+Do not send secrets.
+
+Do not trust frontend amount.
+
+---
+
+# Checkout Page Flow
+
+Update:
+
+```text
+/checkout
+```
+
+Required flow:
+
+```text
+Load Customer Cart or Order Context
+→ Create Application Order if not already created
+→ Request Payment Initialization
+→ Open Razorpay Checkout
+→ Receive Razorpay Payment Data
+→ Call Backend Verification
+→ Wait for Verified Backend Response
+→ Redirect to Payment Success
+```
+
+If application Order already exists, use that Order.
+
+Do not create a new application Order on every retry.
+
+Do not redirect to success before backend verification.
+
+---
+
+# Payment Verification API
+
+Endpoint:
+
+```text
+POST /api/v1/payments/verify
+```
+
+Customer authentication required.
+
+Request body:
+
+```json
+{
+  "paymentId": 10,
+  "razorpayOrderId": "order_xxxxx",
+  "razorpayPaymentId": "pay_xxxxx",
+  "razorpaySignature": "signature_value"
+}
+```
+
+Required flow:
+
+```text
+Validate request
+→ Load local Payment
+→ Validate Customer ownership
+→ Match stored Razorpay Order ID
+→ Build signature payload
+→ Verify HMAC SHA256
+→ Reject invalid signature
+→ Update Payment in transaction
+→ Update Order payment status
+→ Update Order status where documented
+→ Write Payment Log
+→ Return verified result
+```
+
+Signature payload:
+
+```text
+razorpay_order_id + "|" + razorpay_payment_id
+```
+
+Generate expected signature using:
+
+```text
+HMAC SHA256 with RAZORPAY_KEY_SECRET
+```
+
+Compare signatures safely.
+
+Do not use plain insecure comparison where a timing-safe comparison is practical.
+
+---
+
+# Payment Verification Success
+
+On valid signature:
+
+Payment:
+
+```text
+status = CAPTURED or AUTHORIZED
+razorpay_payment_id = received payment ID
+verified_at = current timestamp
+paid_at = current timestamp where appropriate
+updated_by = authenticated user ID
+```
+
+Order:
+
+```text
+payment_status = PAID
+```
+
+Order status should change only according to documented business rules.
+
+Possible safe update:
+
+```text
+PENDING → CONFIRMED
+```
+
+Do not overwrite a later valid Admin status.
+
+Write Payment Log:
+
+```text
+event_type = PAYMENT_VERIFIED
+previous_status
+new_status
+request_id
+safe metadata
+```
+
+Return only verified safe payment details.
+
+---
+
+# Invalid Signature Handling
+
+On invalid signature:
+
+* Do not mark Payment successful.
+* Do not mark Order paid.
+* Update Payment status only if documented.
+* Write a failure Payment Log.
+* Return HTTP 400 or 401 according to project conventions.
+* Do not expose expected signature.
+* Do not expose Key Secret.
+* Log safe diagnostic information only.
+
+---
+
+# Payment Failure API
+
+Endpoint:
+
+```text
+POST /api/v1/payments/failure
+```
+
+Customer authentication required.
+
+Request body may include safe Razorpay failure fields:
+
+```json
+{
+  "paymentId": 10,
+  "razorpayOrderId": "order_xxxxx",
+  "errorCode": "BAD_REQUEST_ERROR",
+  "errorDescription": "Payment failed",
+  "errorReason": "payment_failed",
+  "errorSource": "customer",
+  "errorStep": "payment_authentication"
+}
+```
+
+Rules:
+
+* Validate ownership.
+* Do not accept arbitrary payment status.
+* Do not accept amount.
+* Do not trust raw frontend error blindly.
+* Store only safe, length-limited fields.
+* Update Payment to FAILED where valid.
+* Do not mark Order paid.
+* Update Order payment status to FAILED only when appropriate.
+* Write Payment Log.
+* Return safe response.
+
+Modal dismissal without a gateway failure should not necessarily mark Payment failed.
+
+Document the behavior.
+
+---
+
+# Payment Success Page
+
+Update:
+
+```text
+/payment-success
+```
+
+Requirements:
+
+* Render only after backend verification success.
+* Use safe route state or query reference.
+* Optionally refetch Payment or Order from backend.
+* Display:
+
+  * Order number
+  * Payment ID where safe
+  * Amount
+  * Currency
+  * Status
+  * Date
+* Show Test Mode notice.
+* Provide links to Orders and Payments.
+
+Do not mark success from URL parameters alone.
+
+If verification cannot be confirmed, show a pending/error state.
+
+---
+
+# Payment Failure Page
+
+Update:
+
+```text
+/payment-failed
+```
+
+Requirements:
+
+* Display safe failure message.
+* Display order reference where available.
+* Provide retry option.
+* Provide link to Orders or Products.
+* Do not expose raw Razorpay objects.
+* Do not create duplicate Order on retry.
+* Do not mark payment failed only from query parameters.
+
+---
+
+# Webhook Endpoint
+
+Complete:
+
+```text
+POST /api/v1/webhooks/razorpay
+```
+
+This route must use the exact raw request body.
+
+Do not parse the webhook body with normal JSON middleware before signature verification.
+
+Verify signature using:
+
+```text
+RAZORPAY_WEBHOOK_SECRET
+```
+
+Expected signature header:
+
+```text
+x-razorpay-signature
+```
+
+Required flow:
+
+```text
+Receive raw body
+→ Read signature header
+→ Verify HMAC SHA256
+→ Reject invalid signature
+→ Parse JSON only after verification
+→ Persist Webhook Event
+→ Detect duplicate event
+→ Process supported event
+→ Update Payment/Order
+→ Write Payment Log
+→ Mark Webhook Event processed
+→ Return HTTP 200
+```
+
+---
+
+# Supported Webhook Events
+
+Support the documented subset, such as:
+
+```text
+payment.authorized
+payment.captured
+payment.failed
+order.paid
+```
+
+Handle only supported events.
+
+Unknown events:
+
+* Persist safely if required.
+* Mark as ignored.
+* Return HTTP 200 after valid signature.
+* Do not fail the entire webhook endpoint.
+
+---
+
+# Webhook Event Persistence
+
+Use existing `webhook_events` table.
+
+Store:
+
+* Provider
+* Event ID
+* Event type
+* Entity type
+* Razorpay Order ID
+* Razorpay Payment ID
+* Payload
+* Signature
+* Signature verification result
+* Processing status
+* Processed timestamp
+* Error message
+* Retry count
+* Audit/system fields
+
+Do not store the Webhook Secret.
+
+Do not log full sensitive payloads.
+
+---
+
+# Webhook Idempotency
+
+Prevent duplicate webhook processing.
+
+Use:
+
+* Unique `event_id`, or
+* Payload hash/idempotency key when event ID is unavailable
+
+Duplicate event behavior:
+
+* Do not repeat state transitions.
+* Do not create duplicate logs unnecessarily.
+* Return HTTP 200.
+* Mark or report as duplicate/ignored.
+
+Use a database transaction.
+
+---
+
+# Webhook Status Synchronization
+
+Examples:
+
+## `payment.authorized`
+
+* Set Payment to AUTHORIZED if current transition is valid.
+* Do not move backward from CAPTURED.
+* Write log.
+
+## `payment.captured`
+
+* Set Payment to CAPTURED.
+* Set Order payment status to PAID.
+* Confirm Order where appropriate.
+* Write log.
+
+## `payment.failed`
+
+* Set Payment to FAILED if not already successful.
+* Do not overwrite CAPTURED with FAILED.
+* Update Order payment status only where valid.
+* Write log.
+
+## `order.paid`
+
+* Reconcile local Order and Payment.
+* Mark Order payment status PAID.
+* Do not create duplicate Payment if one already matches.
+* Write log.
+
+All transitions must be idempotent.
+
+---
+
+# Payment Status Transition Rules
+
+Define allowed transitions.
+
+Example:
+
+```text
+CREATED → PENDING
+PENDING → AUTHORIZED
+PENDING → FAILED
+AUTHORIZED → CAPTURED
+AUTHORIZED → FAILED only if valid
+CAPTURED → REFUNDED in future phase only
+```
+
+Do not allow:
+
+```text
+CAPTURED → FAILED
+PAID Order → PENDING payment status
+```
+
+Use a shared transition helper.
+
+Backend is the final authority.
+
+---
+
+# Order Payment Status Rules
+
+Example:
+
+```text
+PENDING → AUTHORIZED
+PENDING → PAID
+PENDING → FAILED
+FAILED → PENDING for a new retry attempt where documented
+AUTHORIZED → PAID
+PAID remains PAID
+```
+
+Do not downgrade PAID.
+
+Multiple failed attempts should not erase a later successful attempt.
+
+Order payment status should reflect the final effective payment state.
+
+---
+
+# Payment Logs
+
+Write logs for:
+
+* Payment initialization
+* Razorpay order creation
+* Checkout initiated where backend knows
+* Verification success
+* Verification failure
+* Payment failure
+* Webhook received
+* Webhook verified
+* Webhook duplicate
+* Payment authorized
+* Payment captured
+* Payment failed
+* Order marked paid
+* Invalid state transition
+* Razorpay API error
+
+Store safe metadata only.
+
+Do not store:
+
+* Secrets
+* JWT tokens
+* Card data
+* CVV
+* Full raw sensitive headers
+
+---
+
+# Logging
+
+Use Winston.
+
+Include:
+
+* Request ID
+* User ID
+* Application Order ID
+* Local Payment ID
+* Razorpay Order ID
+* Razorpay Payment ID where safe
+* Event type
+* Status transition
+
+Do not log:
+
+* Key Secret
+* Webhook Secret
+* Full signature
+* Card information
+* Complete sensitive payloads
+
+---
+
+# Error Handling
+
+Handle:
+
+* Missing Razorpay configuration
+* Invalid Order
+* Unauthorized Order access
+* Already paid Order
+* Duplicate initialization
+* Razorpay API failure
+* Invalid payment signature
+* Payment ID mismatch
+* Razorpay Order ID mismatch
+* Invalid status transition
+* Webhook signature failure
+* Duplicate webhook event
+* Unsupported webhook event
+* Database transaction failure
+* Network failure
+* Unexpected internal error
+
+Use centralized error middleware.
+
+Return request ID.
+
+Do not expose stack traces in production.
+
+---
+
+# Frontend Error Handling
+
+Every async payment operation must use:
+
+```text
+try
+catch
+finally
+```
+
+Requirements:
+
+* Disable payment button while processing.
+* Re-enable after failure.
+* Prevent duplicate submissions.
+* Normalize backend errors.
+* Preserve request ID.
+* Show useful message.
+* Handle Checkout script failure.
+* Handle user dismissal.
+* Handle verification failure.
+* Handle backend timeout.
+* Do not redirect to success on failure.
+* Do not render raw Razorpay error objects.
+
+---
+
+# Swagger
+
+Document:
+
+```text
+POST /payments/initialize
+POST /payments/verify
+POST /payments/failure
+POST /webhooks/razorpay
+GET  /payments/:id
+GET  /payments/history
+GET  /orders/:orderId/payments
+```
+
+Include:
+
+* Authentication requirements
+* Request schemas
+* Response schemas
+* Validation errors
+* Authorization errors
+* Conflict errors
+* Signature verification notes
+* Webhook raw-body notes
+* Test Mode warning
+* Example payloads with fake IDs only
+
+Do not put real secrets in Swagger examples.
+
+---
+
+# Postman
+
+Update or add Part-5 Postman collection.
+
+Include:
+
+* Login
+* Payment initialize
+* Payment verify with placeholder values
+* Payment failure
+* Payment history
+* Payment detail
+* Webhook placeholder/manual testing instructions
+
+Do not include real Key Secret or Webhook Secret.
+
+Clearly state that signature values must come from Razorpay Test Mode.
+
+---
+
+# Backend Tests
+
+Mock Razorpay SDK and external calls.
+
+Do not call real Razorpay APIs in automated tests.
+
+Test:
+
+## Initialization
+
+* Customer can initialize payment for own Order.
+* Customer cannot initialize another user’s Order.
+* Already paid Order rejected.
+* Trusted backend amount used.
+* Frontend amount ignored/rejected.
+* Razorpay Order created with paise.
+* Local Payment created.
+* Duplicate initialization handled.
+* Missing Razorpay config handled.
+
+## Verification
+
+* Valid signature accepted.
+* Invalid signature rejected.
+* Order ID mismatch rejected.
+* Payment ID mismatch rejected.
+* Payment updated.
+* Order payment status updated.
+* Payment Log created.
+* Duplicate verification is idempotent.
+* Successful Payment not downgraded.
+
+## Failure
+
+* Valid failure updates Payment.
+* Ownership enforced.
+* Safe error fields stored.
+* Order not marked paid.
+* Successful Payment not overwritten by failure.
+
+## Webhooks
+
+* Valid webhook signature accepted.
+* Invalid signature rejected.
+* Duplicate event ignored.
+* `payment.authorized` processed.
+* `payment.captured` processed.
+* `payment.failed` processed safely.
+* `order.paid` processed.
+* Unsupported event ignored safely.
+* CAPTURED payment not downgraded.
+* Payment Log created.
+* Webhook Event status updated.
+
+## Regression
+
+All previous backend tests must continue to pass.
+
+---
+
+# Frontend Tests
+
+Mock backend and Razorpay Checkout.
+
+Test:
+
+* Checkout script loads.
+* Script load failure shown.
+* Initialize API called once.
+* Payment button disabled during request.
+* Razorpay Checkout options use backend amount/order ID.
+* Public Key ID only.
+* Success handler calls verification API.
+* Invalid verification does not redirect to success.
+* Valid verification redirects to success.
+* Failure callback calls safe failure API.
+* Modal dismissal handled.
+* Duplicate click prevented.
+* Customer-only payment action.
+* Admin does not see Pay button.
+* Payment success page refetches or validates safe data.
+* Payment failure page displays safe error.
+* No secrets rendered.
+
+All previous frontend tests must continue to pass.
+
+---
+
+# Manual Razorpay Test Mode Verification
+
+After implementation, provide exact manual steps.
+
+Verify with a Razorpay Test Account.
+
+Required manual flow:
+
+```text
+Customer login
+→ Add Product to Cart
+→ Checkout
+→ Create Application Order
+→ Click Pay Now
+→ Razorpay Test Checkout opens
+→ Complete test payment
+→ Backend verifies signature
+→ Payment becomes CAPTURED/PAID
+→ Order payment status becomes PAID
+→ Success page displays verified result
+→ Payment history shows payment
+→ Admin payment list shows payment
+→ Payment logs show transitions
+```
+
+Also test:
+
+* Failed payment
+* User closes Checkout
+* Invalid signature through API test
+* Duplicate verification request
+* Duplicate webhook
+* Customer attempting another Customer’s Order
+* Already-paid Order retry
+* Backend unavailable
+* Razorpay script unavailable
+
+---
+
+# Test Mode Notice
+
+Display visible notice:
+
+```text
+Razorpay Test Mode — No real money will be charged.
+```
+
+Show it on:
+
+* Checkout
+* Payment success
+* Payment failure
+* Payment details where appropriate
+
+---
+
+# Security Verification
+
+Confirm:
+
+* Key Secret absent from frontend source and build output
+* Webhook Secret absent from frontend source and build output
+* No secrets in Git-tracked files
+* No secrets in logs
+* No card information stored
+* Amount calculated from backend Order
+* Signature verified backend-side
+* Webhook verified with raw body
+* Ownership enforced
+* Duplicate processing prevented
+* Success not trusted from frontend only
+* Payment statuses cannot be downgraded incorrectly
+
+Search frontend and repository for:
+
+```text
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+```
+
+Only backend environment/configuration references should exist.
+
+---
+
+# Before Making Changes
+
+1. Open project root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+2. Run:
+
+```cmd
+git status
+```
+
+3. Inspect all dirty files.
+4. Read both Part-5 documents completely.
+5. Inspect:
+
+   * Razorpay config
+   * Payment model
+   * Order model
+   * Payment Log model
+   * Webhook Event model
+   * Payment services/routes/controllers
+   * Webhook route/raw-body handling
+   * Checkout page
+   * Payment success/failure pages
+   * Axios client
+   * Auth and Cart contexts
+   * Swagger
+   * Existing tests
+6. Confirm Part 1–4 tests pass.
+7. Confirm frontend build passes.
+8. Identify API/schema conflicts.
+9. Summarize implementation plan.
+10. List expected files to create or modify.
+11. Explain any schema change before applying it.
+12. Do not start Part 6.
+
+---
+
+# After Implementation
+
+1. List all created files.
+2. List all modified files.
+3. Explain Razorpay initialization flow.
+4. Explain trusted amount calculation.
+5. Explain idempotency strategy.
+6. Explain signature verification.
+7. Explain webhook verification.
+8. Explain payment status transitions.
+9. Explain Order payment status transitions.
+10. Run backend lint.
+11. Run backend tests.
+12. Run migrations.
+13. Check migration status.
+14. Run frontend lint.
+15. Run frontend tests.
+16. Run frontend build.
+17. Start backend and frontend locally.
+18. Verify health.
+19. Verify Swagger.
+20. Verify Customer checkout.
+21. Verify Razorpay Test Checkout.
+22. Verify successful payment.
+23. Verify failed payment.
+24. Verify payment history.
+25. Verify Admin payments.
+26. Verify payment logs.
+27. Verify webhook endpoint.
+28. Verify duplicate prevention.
+29. Verify ownership.
+30. Verify no secrets are exposed.
+31. Verify Docker Compose config remains valid.
+32. Provide exact Windows CMD commands.
+33. List manual Razorpay dashboard/webhook setup.
+34. Do not start Part 6.
+
+---
+
+# Suggested Commands
+
+Backend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
+
+npm install
+npm run lint
+npm run db:migrate
+npm run db:migrate:status
+npm test
+npm run dev
+```
+
+Frontend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\frontend
+
+npm install
+npm run lint
+npm test
+npm run build
+npm run dev
+```
+
+Root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+
+docker compose config
+```
+
+Do not use Docker as the only verification method.
+
+Verify local PostgreSQL, backend, and frontend first.
+
+---
+
+# Manual URLs
+
+Frontend:
+
+```text
+http://localhost:3000/login
+http://localhost:3000/products
+http://localhost:3000/cart
+http://localhost:3000/checkout
+http://localhost:3000/orders
+http://localhost:3000/payments
+http://localhost:3000/payment-success
+http://localhost:3000/payment-failed
+http://localhost:3000/admin/payments
+http://localhost:3000/admin/payment-logs
+```
+
+Backend:
+
+```text
+http://localhost:5000/api/v1/health
+http://localhost:5000/api-docs/
+```
+
+Webhook:
+
+```text
+POST http://localhost:5000/api/v1/webhooks/razorpay
+```
+
+---
+
+# Final Codex Output Format
+
+Provide:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Existing Parts 1 to 4 Preservation
+
+## Razorpay Configuration
+
+## Payment Initialization
+
+## Trusted Amount Calculation
+
+## Razorpay Order Creation
+
+## Idempotency Strategy
+
+## Frontend Checkout Integration
+
+## Payment Verification
+
+## Payment Failure Handling
+
+## Webhook Signature Verification
+
+## Webhook Event Processing
+
+## Payment Status Transitions
+
+## Order Payment Status Transitions
+
+## Payment Logs
+
+## Error Handling
+
+## Logging
+
+## Swagger
+
+## Postman
+
+## Backend Tests
+
+## Frontend Tests
+
+## Migration Results
+
+## Build Results
+
+## Manual Razorpay Test Mode Verification
+
+## Security Verification
+
+## Docker Configuration Check
+
+## Windows CMD Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Part 6 Readiness
+```
+
+Do not claim that a Razorpay payment, webhook, test, build, API call, or browser flow passed unless it was actually verified.
+
+If Razorpay credentials are unavailable, report live Test Mode verification as not configured or not verified.
+
+Do not expose secrets.
+
+Do not make unrelated changes.
+
+Do not implement Part 6.
+
+Do not start production deployment.

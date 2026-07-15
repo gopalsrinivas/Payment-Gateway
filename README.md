@@ -1,6 +1,6 @@
-# Payment Gateway Demo
+# Payment Gateway
 
-Part 1 foundation for a Razorpay Test Mode payment gateway demo.
+Full-stack Razorpay Test Mode payment gateway demo.
 
 ## Scope
 
@@ -18,11 +18,11 @@ Included now:
 - Next.js registration, login, protected dashboard, auth context
 - Docker Compose foundation
 - Part 2 database schema for products, cart items, orders, order items, payments, payment logs, and webhook events
+- Part 5 Razorpay Test Mode payment initialization, Checkout.js flow, backend signature verification, webhook processing, idempotency, and payment logs
 
 Excluded until later parts:
 
-- Products, cart, orders, payments, refunds, payment history, dashboard reports, Razorpay checkout, payment verification, and real webhook event processing
-- Product/cart/order/payment business APIs and frontend business screens
+- Live Mode payments, refunds, settlements, payouts, subscriptions, and production deployment hardening
 
 ## Database Tables
 
@@ -58,6 +58,23 @@ copy frontend\.env.example frontend\.env.local
 
 Never place `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` in frontend environment files.
 
+Backend Razorpay Test Mode variables:
+
+```env
+RAZORPAY_KEY_ID=rzp_test_replace_me
+RAZORPAY_KEY_SECRET=replace_with_test_secret
+RAZORPAY_WEBHOOK_SECRET=replace_with_webhook_secret
+RAZORPAY_CURRENCY=INR
+RAZORPAY_COMPANY_NAME=Payment Gateway
+RAZORPAY_CHECKOUT_DESCRIPTION=Test payment
+```
+
+Frontend exposes only:
+
+```env
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_replace_me
+```
+
 ## Backend
 
 ```cmd
@@ -87,6 +104,19 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Part 5 Manual Razorpay Test Mode Flow
+
+1. Log in as a Customer.
+2. Add a product to cart.
+3. Open `/checkout`.
+4. Click Pay with Razorpay.
+5. Complete Razorpay Test Checkout.
+6. Confirm the frontend redirects to `/payment-success` only after `/payments/verify` succeeds.
+7. Open `/payments` and `/orders` to confirm local status updates.
+8. In the Razorpay Dashboard, configure a Test Mode webhook for `http://localhost:5000/api/v1/webhooks/razorpay` and subscribe to `payment.authorized`, `payment.captured`, `payment.failed`, and `order.paid`.
+
+Use a tunnel such as ngrok for dashboard webhooks during local testing. Do not commit webhook secrets.
 
 ## Docker
 
@@ -125,4 +155,4 @@ SELECT id, name, sku, price, currency, is_active FROM products ORDER BY id;
 
 ## Next Phase
 
-Part 3 can add Product and Cart APIs on top of this database foundation. Payment processing is still intentionally not implemented.
+Part 6 can add broader testing, CI/CD, deployment, monitoring, and hardening.

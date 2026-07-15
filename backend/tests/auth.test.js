@@ -127,7 +127,6 @@ test("role middleware foundation allows matching role and rejects others", async
 
 test("webhook placeholder endpoint preserves raw-body route", async () => {
   const res = await request(app).post("/api/v1/webhooks/razorpay").set("Content-Type", "application/json").send({ event: "payment.captured" });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.data.processed, false);
+  assert.equal(res.status, 400);
+  assert.equal(res.body.message, "Missing Razorpay webhook signature");
 });
-

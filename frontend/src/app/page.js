@@ -32,7 +32,7 @@ export default function HomePage() {
         </div>
       </div>
       <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Part 4 frontend scope</h2>
+        <h2 className="text-lg font-semibold text-ink">frontend scope</h2>
         <ul className="mt-4 space-y-3 text-sm text-slate-600">
           <li>Role-aware Customer and Admin navigation</li>
           <li>Product, cart, checkout preparation, orders, and payments UI</li>

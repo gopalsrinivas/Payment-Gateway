@@ -1,34 +1,71 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
+import CustomerPageHeader from "../../components/customer/CustomerPageHeader";
+import CustomerOrderCard from "../../components/orders/CustomerOrderCard";
+import OrderFilters from "../../components/orders/OrderFilters";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import ErrorState from "../../components/ui/ErrorState";
-import Input from "../../components/ui/Input";
 import Pagination from "../../components/ui/Pagination";
-import Select from "../../components/ui/Select";
 import Spinner from "../../components/ui/Spinner";
-import StatusBadge from "../../components/ui/StatusBadge";
 import { listOrders } from "../../services/orderService";
-import { formatCurrency } from "../../utils/currency";
-import { formatDate } from "../../utils/date";
+import { ORDER_FILTER_STATUSES, PAYMENT_FILTER_STATUSES } from "../../utils/constants";
 import { normalizeApiError } from "../../utils/errors";
-import { ORDER_STATUSES, PAYMENT_STATUSES } from "../../utils/constants";
+import { cleanQueryParams, valueOrAll } from "../../utils/query";
+
+const defaultFilters = {
+  page: 1,
+  limit: 10,
+  search: "",
+  status: "ALL",
+  paymentStatus: "ALL",
+  sortBy: "created_at",
+  sortOrder: "DESC",
+};
+
+const getInitialFilters = () => {
+  if (typeof window === "undefined") return defaultFilters;
+  const params = new URLSearchParams(window.location.search);
+  return {
+    ...defaultFilters,
+    page: Number(params.get("page")) > 0 ? Number(params.get("page")) : 1,
+    search: params.get("search") || "",
+    status: valueOrAll(params.get("status"), ORDER_FILTER_STATUSES),
+    paymentStatus: valueOrAll(params.get("paymentStatus"), PAYMENT_FILTER_STATUSES),
+    sortBy: ["created_at", "order_number", "total_amount"].includes(params.get("sortBy")) ? params.get("sortBy") : defaultFilters.sortBy,
+  };
+};
+
+const getFilterMessage = (error) => {
+  const field = error?.errors?.[0]?.field;
+  if (field === "status") return "Unable to load orders because the selected order status filter is invalid. Please reset the filters and try again.";
+  if (field === "paymentStatus" || field === "payment_status") return "Unable to load orders because the selected payment status filter is invalid. Please reset the filters and try again.";
+  return error?.message;
+};
 
 export default function OrdersPage() {
-  const [filters, setFilters] = useState({ page: 1, limit: 10, search: "", status: "", paymentStatus: "" });
+  const [filters, setFilters] = useState(getInitialFilters);
   const [data, setData] = useState({ items: [], pagination: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const requestParams = useMemo(() => cleanQueryParams(filters), [filters]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(requestParams).toString();
+    const nextUrl = query ? `/orders?${query}` : "/orders";
+    window.history.replaceState(null, "", nextUrl);
+  }, [requestParams]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await listOrders(filters);
+        const response = await listOrders(requestParams);
         setData(response.data);
       } catch (err) {
         setError(normalizeApiError(err));
@@ -37,47 +74,51 @@ export default function OrdersPage() {
       }
     };
     load();
-  }, [filters]);
+  }, [requestParams]);
+
+  const updateFilters = (patch) => setFilters((current) => ({ ...current, ...patch }));
+  const resetFilters = () => setFilters(defaultFilters);
+  const retry = () => setFilters((current) => ({ ...current }));
 
   return (
     <ProtectedRoute>
       <section className="space-y-6">
-        <h1 className="text-3xl font-bold text-ink">Orders</h1>
-        <div className="grid gap-3 rounded-md border bg-white p-4 md:grid-cols-4">
-          <Input id="orderSearch" label="Search order" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value, page: 1 })} />
-          <Select id="status" label="Order status" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value, page: 1 })}>
-            <option value="">All</option>
-            {ORDER_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-          </Select>
-          <Select id="paymentStatus" label="Payment status" value={filters.paymentStatus} onChange={(event) => setFilters({ ...filters, paymentStatus: event.target.value, page: 1 })}>
-            <option value="">All</option>
-            {PAYMENT_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-          </Select>
-        </div>
-        {loading ? <Spinner label="Loading orders" /> : null}
-        {error ? <ErrorState message={error.message} requestId={error.requestId} /> : null}
-        {!loading && !error && data.items.length === 0 ? <EmptyState title="No orders yet" message="Create an application order from checkout." /> : null}
-        {!loading && !error && data.items.length > 0 ? (
-          <div className="overflow-x-auto rounded-md border bg-white">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr><th className="p-3">Order</th><th className="p-3">Date</th><th className="p-3">Total</th><th className="p-3">Status</th><th className="p-3">Payment</th><th className="p-3">Action</th></tr>
-              </thead>
-              <tbody className="divide-y">
-                {data.items.map((order) => (
-                  <tr key={order.id}>
-                    <td className="p-3 font-medium">{order.order_number}</td>
-                    <td className="p-3">{formatDate(order.created_at)}</td>
-                    <td className="p-3">{formatCurrency(order.total_amount, order.currency)}</td>
-                    <td className="p-3"><StatusBadge status={order.status} /></td>
-                    <td className="p-3"><StatusBadge status={order.payment_status} /></td>
-                    <td className="p-3"><Button as={Link} href={`/orders/${order.id}`} variant="secondary">Details</Button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination pagination={data.pagination} onPageChange={(page) => setFilters({ ...filters, page })} />
+        <CustomerPageHeader
+          title="My Orders"
+          description="Track your orders, payment status, and test-mode checkout progress from one place."
+          actions={<Button as={Link} href="/products">Browse Products</Button>}
+        />
+
+        <OrderFilters filters={filters} onChange={updateFilters} onReset={resetFilters} />
+
+        {loading ? <Spinner label="Loading your orders" /> : null}
+        {error ? (
+          <ErrorState
+            title="Unable to load orders"
+            message={getFilterMessage(error)}
+            requestId={error.requestId}
+            onRetry={retry}
+          />
+        ) : null}
+        {error ? (
+          <div>
+            <Button type="button" variant="secondary" onClick={resetFilters}>Reset Filters</Button>
           </div>
+        ) : null}
+        {!loading && !error && data.items.length === 0 ? (
+          <EmptyState
+            title="No orders found"
+            message="Create an order from checkout, or reset filters to see all of your orders."
+            action={<Button as={Link} href="/products">Continue Shopping</Button>}
+          />
+        ) : null}
+        {!loading && !error && data.items.length > 0 ? (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {data.items.map((order) => <CustomerOrderCard key={order.id} order={order} />)}
+            </div>
+            <Pagination pagination={data.pagination} onPageChange={(page) => updateFilters({ page })} />
+          </>
         ) : null}
       </section>
     </ProtectedRoute>

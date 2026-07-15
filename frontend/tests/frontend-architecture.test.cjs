@@ -62,11 +62,21 @@ test("frontend does not expose backend-only Razorpay secrets", () => {
   assert.equal(source.includes("RAZORPAY_WEBHOOK_SECRET"), false);
 });
 
-test("checkout remains Part 4 preparation only", () => {
+test("checkout uses Part 5 Razorpay verification flow", () => {
   const checkout = read("src/app/checkout/page.js");
+  const paymentService = read("src/services/paymentService.js");
+  const razorpayHook = read("src/hooks/useRazorpay.js");
+
   assert.match(checkout, /createOrder/);
-  assert.doesNotMatch(checkout, /new window\.Razorpay/);
-  assert.doesNotMatch(checkout, /payments\/verify|payments\/create-order|razorpay_signature/);
+  assert.match(checkout, /initializePayment/);
+  assert.match(checkout, /verifyPayment/);
+  assert.match(checkout, /recordPaymentFailure/);
+  assert.match(checkout, /router\.push\(`\/payment-success\?paymentId=/);
+  assert.match(paymentService, /\/payments\/initialize/);
+  assert.match(paymentService, /\/payments\/verify/);
+  assert.match(paymentService, /\/payments\/failure/);
+  assert.match(razorpayHook, /https:\/\/checkout\.razorpay\.com\/v1\/checkout\.js/);
+  assert.match(razorpayHook, /new window\.Razorpay/);
 });
 
 test("role rendering and comparisons use normalization", () => {
@@ -114,20 +124,85 @@ test("customer and admin layouts are structurally separated", () => {
 
   assert.match(appShell, /AdminLayout/);
   assert.match(appShell, /CustomerLayout/);
-  assert.match(customerNavbar, /Customer Dashboard/);
-  assert.match(customerNavbar, /My Cart/);
+  assert.match(customerNavbar, /Customer Panel/);
+  assert.match(customerNavbar, /Dashboard/);
+  assert.match(customerNavbar, /Cart/);
+  assert.match(customerNavbar, /aria-label=\{`Cart with \$\{itemCount\} items`\}/);
   assert.doesNotMatch(customerNavbar, /Payment Logs/);
+  assert.doesNotMatch(customerNavbar, /Product Management/);
   assert.match(adminSidebar, /Admin Panel/);
   assert.match(adminSidebar, /Product Management/);
   assert.match(adminSidebar, /Payment Logs/);
-  assert.doesNotMatch(adminSidebar, /My Cart|Buy Now/);
+  assert.doesNotMatch(adminSidebar, /Cart|Buy Now|Customer Panel/);
+});
+
+test("customer order filters omit empty and all values before API requests", () => {
+  const queryUtils = read("src/utils/query.js");
+  const orderService = read("src/services/orderService.js");
+  const ordersPage = read("src/app/orders/page.js");
+
+  assert.match(queryUtils, /value !== ""/);
+  assert.match(queryUtils, /value !== "ALL"/);
+  assert.match(orderService, /cleanQueryParams/);
+  assert.match(orderService, /params: cleanQueryParams\(params\)/);
+  assert.match(ordersPage, /status: "ALL"/);
+  assert.match(ordersPage, /paymentStatus: "ALL"/);
+  assert.match(ordersPage, /valueOrAll\(params\.get\("status"\), ORDER_FILTER_STATUSES\)/);
+  assert.match(ordersPage, /valueOrAll\(params\.get\("paymentStatus"\), PAYMENT_FILTER_STATUSES\)/);
+  assert.match(ordersPage, /window\.history\.replaceState/);
+});
+
+test("customer order filters use backend-supported enum values", () => {
+  const constants = read("src/utils/constants.js");
+  const filters = read("src/components/orders/OrderFilters.js");
+
+  [
+    "PENDING",
+    "CONFIRMED",
+    "PROCESSING",
+    "COMPLETED",
+    "CANCELLED",
+    "FAILED",
+    "CREATED",
+    "AUTHORIZED",
+    "CAPTURED",
+    "PAID",
+    "REFUNDED",
+    "PARTIALLY_REFUNDED",
+  ].forEach((status) => assert.match(constants, new RegExp(`"${status}"`)));
+
+  assert.match(filters, /value="ALL">All Orders/);
+  assert.match(filters, /value="ALL">All Payments/);
+  assert.match(filters, /Reset Filters/);
+  assert.doesNotMatch(filters, /value=""/);
+});
+
+test("customer pages use customer-specific surfaces", () => {
+  const dashboard = read("src/app/dashboard/page.js");
+  const orders = read("src/app/orders/page.js");
+  const products = read("src/app/products/page.js");
+  const cart = read("src/app/cart/page.js");
+  const profile = read("src/app/profile/page.js");
+
+  assert.match(dashboard, /CustomerPageHeader/);
+  assert.match(dashboard, /CustomerStatCard/);
+  assert.match(dashboard, /Browse Products/);
+  assert.match(orders, /CustomerOrderCard/);
+  assert.match(orders, /OrderFilters/);
+  assert.match(products, /CustomerPageHeader/);
+  assert.match(cart, /CustomerPageHeader/);
+  assert.match(cart, /Continue Shopping/);
+  assert.match(profile, /CustomerPageHeader/);
+  assert.doesNotMatch([dashboard, orders, products, cart, profile].join("\n"), /AdminLayout|AdminSidebar|Payment Logs|Product Management/);
 });
 
 test("order detail links are role-specific", () => {
   const customerOrders = read("src/app/orders/page.js");
+  const customerOrderCard = read("src/components/orders/CustomerOrderCard.js");
   const adminOrders = read("src/app/admin/orders/page.js");
 
-  assert.match(customerOrders, /href=\{`\/orders\/\$\{order\.id\}`\}/);
+  assert.match(customerOrders, /CustomerOrderCard/);
+  assert.match(customerOrderCard, /href=\{`\/orders\/\$\{order\.id\}`\}/);
   assert.match(adminOrders, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
 });
 
@@ -135,4 +210,15 @@ test("customer missing order message is ownership-safe", () => {
   const customerOrderDetails = read("src/app/orders/[id]/page.js");
   assert.match(customerOrderDetails, /This order does not exist or is not available for your account/);
   assert.match(customerOrderDetails, /Back to My Orders/);
+});
+
+test("payment result pages refetch safe backend payment data", () => {
+  const successPage = read("src/app/payment-success/page.js");
+  const failedPage = read("src/app/payment-failed/page.js");
+
+  assert.match(successPage, /getPayment/);
+  assert.match(successPage, /Verified payment reference is required/);
+  assert.doesNotMatch(successPage, /razorpay_signature/);
+  assert.match(failedPage, /Retry payment/);
+  assert.doesNotMatch(failedPage, /JSON\.stringify/);
 });

@@ -11,7 +11,7 @@ const swaggerSpec = swaggerJsdoc({
       title: "Payment Gateway Demo API",
       version: "1.0.0",
       description:
-        "Backend APIs for product browsing, cart management, trusted order creation, payment history/log inspection, dashboards, and the raw Razorpay webhook foundation. Razorpay order creation, signature verification, and final webhook processing are intentionally reserved for Part 5.",
+        "Backend APIs for product browsing, cart management, trusted order creation, Razorpay Test Mode initialization, backend signature verification, webhook processing, payment history/log inspection, and dashboards. Secrets are never returned to the frontend.",
     },
     servers: [{ url: "http://localhost:5000/api/v1" }],
     components: {
@@ -83,6 +83,37 @@ const swaggerSpec = swaggerJsdoc({
               enum: ["CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED", "FAILED"],
               example: "CONFIRMED",
             },
+          },
+        },
+        PaymentInitializeRequest: {
+          type: "object",
+          required: ["orderId"],
+          properties: {
+            orderId: { type: "integer", example: 35 },
+          },
+        },
+        PaymentVerifyRequest: {
+          type: "object",
+          required: ["applicationOrderId", "razorpayOrderId", "razorpayPaymentId", "razorpaySignature"],
+          properties: {
+            applicationOrderId: { type: "integer", example: 35 },
+            paymentId: { type: "integer", example: 10 },
+            razorpayOrderId: { type: "string", example: "order_test_123" },
+            razorpayPaymentId: { type: "string", example: "pay_test_123" },
+            razorpaySignature: { type: "string", example: "generated_by_razorpay_checkout" },
+          },
+        },
+        PaymentFailureRequest: {
+          type: "object",
+          required: ["applicationOrderId", "razorpayOrderId"],
+          properties: {
+            applicationOrderId: { type: "integer", example: 35 },
+            paymentId: { type: "integer", example: 10 },
+            razorpayOrderId: { type: "string", example: "order_test_123" },
+            razorpayPaymentId: { type: "string", example: "pay_test_failed" },
+            errorCode: { type: "string", example: "BAD_REQUEST_ERROR" },
+            errorDescription: { type: "string", example: "Payment failed in Razorpay Test Mode" },
+            errorReason: { type: "string", example: "payment_failed" },
           },
         },
         SuccessResponse: {
@@ -301,6 +332,45 @@ const swaggerSpec = swaggerJsdoc({
           responses: { 200: { description: "Paginated payment list" } },
         },
       },
+      "/payments/initialize": {
+        post: {
+          tags: ["Payments"],
+          summary: "Initialize Razorpay Test Mode checkout",
+          description: "Creates or reuses a Razorpay order for a trusted application order. Amount and currency are loaded from the backend order only. The Key Secret and Webhook Secret are never returned.",
+          security: auth,
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/PaymentInitializeRequest" } } } },
+          responses: { 201: { description: "Safe Razorpay Checkout configuration" }, 400: { description: "Validation error" }, 404: { description: "Order not found" }, 409: { description: "Order already paid or not payable" } },
+        },
+      },
+      "/payments/create-order": {
+        post: {
+          tags: ["Payments"],
+          summary: "Alias for initializing Razorpay Test Mode checkout",
+          security: auth,
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/PaymentInitializeRequest" } } } },
+          responses: { 201: { description: "Safe Razorpay Checkout configuration" } },
+        },
+      },
+      "/payments/verify": {
+        post: {
+          tags: ["Payments"],
+          summary: "Verify Razorpay Checkout signature",
+          description: "Verifies HMAC SHA256 on the backend using RAZORPAY_KEY_SECRET. Frontend success callbacks are not trusted until this endpoint succeeds.",
+          security: auth,
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/PaymentVerifyRequest" } } } },
+          responses: { 200: { description: "Payment verified and local order updated" }, 400: { description: "Invalid signature" }, 404: { description: "Payment not found" }, 409: { description: "Identifier mismatch" } },
+        },
+      },
+      "/payments/failure": {
+        post: {
+          tags: ["Payments"],
+          summary: "Record safe frontend Razorpay failure telemetry",
+          description: "Records sanitized failure details without marking a captured payment failed. Webhooks remain an independent trusted source.",
+          security: auth,
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/PaymentFailureRequest" } } } },
+          responses: { 200: { description: "Failure recorded safely" }, 404: { description: "Payment not found" }, 409: { description: "Identifier mismatch" } },
+        },
+      },
       "/payments/history": {
         get: { tags: ["Payments"], summary: "Authenticated customer's payment history", security: auth, responses: { 200: { description: "Payment history" } } },
       },
@@ -354,9 +424,10 @@ const swaggerSpec = swaggerJsdoc({
       "/webhooks/razorpay": {
         post: {
           tags: ["Webhooks"],
-          summary: "Razorpay webhook foundation only",
-          description: "Preserves raw request body handling. It does not verify signatures or process payment events yet.",
-          responses: { 200: { description: "Placeholder response" } },
+          summary: "Razorpay raw-body webhook",
+          description: "Requires X-Razorpay-Signature. The exact raw request body is verified with RAZORPAY_WEBHOOK_SECRET before JSON parsing. Supported events: payment.authorized, payment.captured, payment.failed, order.paid. Unknown valid events are ignored safely.",
+          parameters: [{ name: "X-Razorpay-Signature", in: "header", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Webhook processed, ignored, or duplicate accepted" }, 400: { description: "Missing or invalid signature" } },
         },
       },
     },

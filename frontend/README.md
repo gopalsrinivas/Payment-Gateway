@@ -4,7 +4,7 @@ Next.js App Router frontend for Payment Gateway.
 
 ## Scope
 
-Part 4 implements authentication UI, role-aware navigation, product browsing, Admin product management, cart management, checkout preparation, order history, payment history, dashboards, profile, and payment success/failure foundations.
+Part 5 implements authentication UI, role-aware navigation, product browsing, Admin product management, cart management, Razorpay Test Mode Checkout, backend verification flow, order history, payment history, dashboards, profile, and payment success/failure screens.
 
 This application uses Razorpay Test Mode. No real money is processed.
 
@@ -23,7 +23,7 @@ Only the Razorpay public Key ID is exposed to the browser. Do not add Razorpay s
 ## Architecture
 
 ```text
-Page -> Component -> Context/Hook -> Service -> Axios Client -> Part 3 Backend API
+Page -> Component -> Context/Hook -> Service -> Axios Client -> Backend API
 ```
 
 Auth state uses `AuthContext` with the existing `localStorage` JWT strategy. Cart state uses `CartContext`, while the backend remains the source of truth for item totals and order totals.
@@ -69,10 +69,10 @@ npm run build
 npm start
 ```
 
+## Razorpay Checkout
+
+Checkout loads `https://checkout.razorpay.com/v1/checkout.js` only when needed. The browser uses only the public Key ID and backend-returned Razorpay order details. Payment success is shown only after `/payments/verify` confirms the signature server-side.
+
 ## Known Limitations
 
-Part 4 does not open Razorpay Checkout, create Razorpay orders, verify signatures, process webhooks, or mark payments successful from browser state. Checkout creates only an application order from the backend-trusted cart.
-
-## Part 5 Readiness
-
-The success/failure pages and public Razorpay Key ID configuration are ready for Part 5, where backend create-order, verification, and gateway failure endpoints should be added before enabling Checkout.
+Live Mode payments, refunds, settlements, subscriptions, and production deployment hardening are out of scope until later phases.

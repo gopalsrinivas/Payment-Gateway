@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ProtectedRoute from "../../../components/auth/ProtectedRoute";
+import CustomerPageHeader from "../../../components/customer/CustomerPageHeader";
 import ErrorState from "../../../components/ui/ErrorState";
 import Spinner from "../../../components/ui/Spinner";
 import StatusBadge from "../../../components/ui/StatusBadge";
@@ -33,11 +34,13 @@ export default function PaymentDetailsPage() {
 
   return (
     <ProtectedRoute>
-      {loading ? <Spinner label="Loading payment" /> : null}
-      {error ? <ErrorState title="Payment unavailable" message={error.message} requestId={error.requestId} /> : null}
-      {payment ? (
-        <section className="rounded-md border bg-white p-6">
-          <h1 className="text-3xl font-bold text-ink">Payment #{payment.id}</h1>
+      <section className="space-y-6">
+        <CustomerPageHeader title="Payment Details" description="Customer-safe payment information. Signatures and raw gateway payloads are hidden." />
+        {loading ? <Spinner label="Loading payment" /> : null}
+        {error ? <ErrorState title="Payment unavailable" message={error.message} requestId={error.requestId} /> : null}
+        {payment ? (
+        <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Payment #{payment.id}</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <p><span className="text-slate-500">Order:</span> {payment.order?.order_number || "N/A"}</p>
             <p><span className="text-slate-500">Amount:</span> {formatCurrency(payment.amount, payment.currency)}</p>
@@ -48,8 +51,9 @@ export default function PaymentDetailsPage() {
             <p><span className="text-slate-500">Status:</span> <StatusBadge status={payment.status} /></p>
           </div>
           <p className="mt-5 text-sm text-slate-500">Sensitive payment signatures and raw gateway payloads are not displayed.</p>
-        </section>
-      ) : null}
+        </div>
+        ) : null}
+      </section>
     </ProtectedRoute>
   );
 }
