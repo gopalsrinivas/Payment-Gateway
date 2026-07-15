@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.24.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -68,14 +68,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build -t payment-gateway-backend:security ./backend
       - run: docker build --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1 --build-arg NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_security_placeholder -t payment-gateway-frontend:security ./frontend
-      - uses: aquasecurity/trivy-action@0.24.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: payment-gateway-backend:security
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           format: table
           exit-code: "1"
-      - uses: aquasecurity/trivy-action@0.24.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: payment-gateway-frontend:security
           severity: HIGH,CRITICAL
