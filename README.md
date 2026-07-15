@@ -271,7 +271,7 @@ order.paid
 
 Use Razorpay Test Mode only. Never expose `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` in frontend code or browser environment variables. Local webhook testing requires a tunnel such as ngrok.
 
-## Interview Demo Flow
+## Demo Flow
 
 1. Open Home page
 2. Register/Login as Customer
