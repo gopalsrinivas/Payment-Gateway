@@ -1,45 +1,56 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../../contexts/AuthContext";
+import { useEffect, useState } from "react";
+import ProtectedRoute from "../../components/auth/ProtectedRoute";
+import SummaryCard from "../../components/dashboard/SummaryCard";
+import ErrorState from "../../components/ui/ErrorState";
+import Spinner from "../../components/ui/Spinner";
+import { getCustomerDashboard } from "../../services/dashboardService";
+import { formatCurrency } from "../../utils/currency";
+import { normalizeApiError } from "../../utils/errors";
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [loading, router, user]);
-
-  if (loading || !user) {
-    return <div className="text-sm text-slate-600">Loading...</div>;
-  }
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await getCustomerDashboard();
+        setSummary(response.data);
+      } catch (err) {
+        setError(normalizeApiError(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-brand">Protected</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Dashboard</h1>
-        <p className="mt-2 text-slate-600">Authentication is working. Product, order, and payment features arrive in later parts.</p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-500">User</p>
-          <p className="mt-1 font-medium text-ink">{user.name}</p>
+    <ProtectedRoute>
+      <section className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-ink">Customer dashboard</h1>
+          <p className="mt-2 text-slate-600">Your cart, order, and payment overview.</p>
         </div>
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-500">Email</p>
-          <p className="mt-1 break-words font-medium text-ink">{user.email}</p>
-        </div>
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-500">Role</p>
-          <p className="mt-1 font-medium text-ink">{user.role?.name || "Customer"}</p>
-        </div>
-      </div>
-    </section>
+        {loading ? <Spinner label="Loading dashboard" /> : null}
+        {error ? <ErrorState message={error.message} requestId={error.requestId} /> : null}
+        {summary ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard label="Cart items" value={summary.activeCartItemCount} />
+            <SummaryCard label="Total orders" value={summary.totalOrders} />
+            <SummaryCard label="Pending orders" value={summary.pendingOrders} />
+            <SummaryCard label="Completed orders" value={summary.completedOrders} />
+            <SummaryCard label="Successful payments" value={summary.successfulPayments} />
+            <SummaryCard label="Failed payments" value={summary.failedPayments} />
+            <SummaryCard label="Pending payments" value={summary.pendingPayments} />
+            <SummaryCard label="Total paid" value={formatCurrency(summary.totalPaidAmount)} />
+          </div>
+        ) : null}
+      </section>
+    </ProtectedRoute>
   );
 }
-

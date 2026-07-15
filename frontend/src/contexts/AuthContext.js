@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { fetchProfile, loginUser, logoutUser, registerUser } from "../services/authService";
+import { clearToken, getToken, setToken } from "../utils/storage";
+import { getRoleName, normalizeUser } from "../utils/auth";
 
 const AuthContext = createContext(null);
 
@@ -12,19 +14,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshProfile = useCallback(async () => {
+    const response = await fetchProfile();
+    const normalized = normalizeUser(response.data.user);
+    setUser(normalized);
+    return normalized;
+  }, []);
+
   useEffect(() => {
     const loadProfile = async () => {
-      const token = window.localStorage.getItem("authToken");
+      const token = getToken();
       if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await fetchProfile();
-        setUser(response.data.data.user);
+        await refreshProfile();
       } catch (_error) {
-        window.localStorage.removeItem("authToken");
+        clearToken();
         setUser(null);
       } finally {
         setLoading(false);
@@ -32,15 +40,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     loadProfile();
-  }, []);
+    const onExpired = () => setUser(null);
+    window.addEventListener("auth:expired", onExpired);
+    return () => window.removeEventListener("auth:expired", onExpired);
+  }, [refreshProfile]);
 
   const login = useCallback(async (payload) => {
     const response = await loginUser(payload);
-    const { token, user: loggedInUser } = response.data.data;
-    window.localStorage.setItem("authToken", token);
-    setUser(loggedInUser);
+    const { token, user: loggedInUser } = response.data;
+    const normalized = normalizeUser(loggedInUser);
+    setToken(token);
+    setUser(normalized);
     toast.success("Signed in");
-    router.push("/dashboard");
+    router.push(getRoleName(normalized) === "Admin" ? "/admin/dashboard" : "/dashboard");
   }, [router]);
 
   const register = useCallback(async (payload) => {
@@ -55,12 +67,28 @@ export const AuthProvider = ({ children }) => {
     } catch (_error) {
       // Stateless JWT logout still removes the local token.
     }
-    window.localStorage.removeItem("authToken");
+    clearToken();
     setUser(null);
+    window.dispatchEvent(new Event("cart:clear"));
     router.push("/login");
   }, [router]);
 
-  const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading, login, register, logout]);
+  const hasRole = useCallback((role) => getRoleName(user) === role, [user]);
+  const value = useMemo(
+    () => ({
+      user,
+      token: getToken(),
+      loading,
+      isLoading: loading,
+      isAuthenticated: Boolean(user),
+      login,
+      register,
+      logout,
+      refreshProfile,
+      hasRole,
+    }),
+    [user, loading, login, register, logout, refreshProfile, hasRole],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

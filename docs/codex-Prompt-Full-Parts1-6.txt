@@ -3443,3 +3443,1549 @@ Do not implement Part 4.
 Do not implement full Razorpay integration.
 
 Do not start Part 5.
+
+
+Part-4 → Frontend
+------------------
+Read these files completely before making any changes:
+
+1. `docs/Part-4-Frontend-Payment-Gateway.md`
+2. `docs/Codex-Prompt-Part-4-Frontend-Payment-Gateway.md`
+
+Continue from the existing Part 1, Part 2, and Part 3 implementation.
+
+Implement ONLY Part 4: frontend application, frontend architecture, UI integration, authentication flow, role-based pages, API integration, Razorpay Checkout preparation, frontend validations, responsive design, and frontend tests.
+
+Project root:
+
+```text
+D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+Do not create another nested project folder.
+
+# Existing Implementation
+
+Part 1 is complete and includes:
+
+* Root project setup
+* Node.js and Express backend foundation
+* Next.js frontend foundation
+* PostgreSQL and Sequelize configuration
+* Registration
+* Login
+* Logout
+* Protected profile
+* JWT authentication
+* Role authorization foundation
+* Swagger
+* Logging
+* Centralized error handling
+* Razorpay SDK configuration foundation
+* Webhook raw-body foundation
+* Docker foundation
+* Backend and frontend basic tests
+
+Part 2 is complete and includes:
+
+* Roles
+* Users
+* Products
+* Cart Items
+* Orders
+* Order Items
+* Payments
+* Payment Logs
+* Webhook Events
+* Audit fields
+* Soft delete
+* Foreign keys
+* Constraints
+* Indexes
+* Sequelize models
+* Model associations
+* Seed products
+* Database tests
+
+Part 3 is complete and includes backend APIs for:
+
+* Products
+* Cart
+* Orders
+* Payments
+* Payment History
+* Payment Logs
+* Customer Dashboard
+* Admin Dashboard
+* Search
+* Filtering
+* Sorting
+* Pagination
+* Role authorization
+* Ownership validation
+* Swagger
+* Postman collection
+* Backend API tests
+
+Preserve all working Part 1, Part 2, and Part 3 functionality.
+
+---
+
+# Scope
+
+Implement only the frontend for:
+
+* Authentication
+* Customer Dashboard
+* Admin Dashboard
+* Product Listing
+* Product Details
+* Admin Product Management
+* Cart
+* Checkout preparation
+* Order History
+* Order Details
+* Payment History
+* Payment Details where supported
+* Payment Success page foundation
+* Payment Failure page foundation
+* Admin Payment Logs
+* Profile
+* Navigation
+* Loading states
+* Empty states
+* Error states
+* Responsive UI
+
+Part 4 should integrate only with the existing Part 3 backend APIs.
+
+Part 4 must not implement full Razorpay payment processing.
+
+---
+
+# Important Restrictions
+
+* Do not recreate or overwrite correct backend files.
+* Do not modify existing database migrations.
+* Do not modify Sequelize models unless required to fix a real frontend-blocking API issue.
+* Do not change backend API contracts without first identifying and explaining the mismatch.
+* Do not implement Razorpay Order API calls.
+* Do not implement final Razorpay Checkout payment processing.
+* Do not implement payment signature verification.
+* Do not implement full webhook processing.
+* Do not implement refunds.
+* Do not implement production DevOps.
+* Do not expose Razorpay Key Secret.
+* Do not expose Razorpay Webhook Secret.
+* Do not trust frontend totals.
+* Do not duplicate existing API logic in the frontend.
+* Do not use mock data when a working backend API exists.
+* Do not use the Pages Router.
+* Use Next.js App Router only.
+* Do not introduce unnecessary state-management libraries.
+* Reuse the existing Axios client, Auth Context, utilities, and UI patterns.
+
+---
+
+# Frontend Architecture
+
+Use this flow:
+
+```text
+Page
+→ Reusable Component
+→ Context or Custom Hook
+→ Frontend Service
+→ Axios API Client
+→ Backend REST API
+```
+
+Frontend pages must not call Axios directly where a reusable service is appropriate.
+
+Use:
+
+* Next.js App Router
+* React
+* JavaScript
+* Tailwind CSS
+* Axios
+* React Hook Form
+* React Hot Toast
+* React Icons
+* Existing project dependencies
+
+Do not add Redux unless the existing architecture clearly requires it.
+
+Use React Context for:
+
+* Authentication
+* Cart state where useful
+
+Use local component state for page-specific state.
+
+---
+
+# Frontend Folder Structure
+
+Preserve and extend the existing frontend structure.
+
+Expected structure:
+
+```text
+frontend/
+│
+├── public/
+│
+├── src/
+│   ├── app/
+│   │   ├── login/
+│   │   ├── register/
+│   │   ├── dashboard/
+│   │   ├── products/
+│   │   │   ├── page.js
+│   │   │   └── [id]/
+│   │   │       └── page.js
+│   │   ├── cart/
+│   │   │   └── page.js
+│   │   ├── checkout/
+│   │   │   └── page.js
+│   │   ├── orders/
+│   │   │   ├── page.js
+│   │   │   └── [id]/
+│   │   │       └── page.js
+│   │   ├── payments/
+│   │   │   ├── page.js
+│   │   │   └── [id]/
+│   │   │       └── page.js
+│   │   ├── payment-success/
+│   │   │   └── page.js
+│   │   ├── payment-failed/
+│   │   │   └── page.js
+│   │   ├── profile/
+│   │   │   └── page.js
+│   │   ├── admin/
+│   │   │   ├── dashboard/
+│   │   │   ├── products/
+│   │   │   │   ├── page.js
+│   │   │   │   ├── create/
+│   │   │   │   │   └── page.js
+│   │   │   │   └── [id]/
+│   │   │   │       └── edit/
+│   │   │   │           └── page.js
+│   │   │   ├── orders/
+│   │   │   ├── payments/
+│   │   │   └── payment-logs/
+│   │   ├── layout.js
+│   │   └── page.js
+│   │
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Navbar.js
+│   │   │   ├── Sidebar.js
+│   │   │   ├── Footer.js
+│   │   │   ├── CustomerLayout.js
+│   │   │   └── AdminLayout.js
+│   │   ├── auth/
+│   │   │   ├── ProtectedRoute.js
+│   │   │   └── RoleRoute.js
+│   │   ├── products/
+│   │   │   ├── ProductCard.js
+│   │   │   ├── ProductList.js
+│   │   │   ├── ProductForm.js
+│   │   │   └── ProductFilters.js
+│   │   ├── cart/
+│   │   │   ├── CartItem.js
+│   │   │   └── CartSummary.js
+│   │   ├── orders/
+│   │   │   ├── OrderCard.js
+│   │   │   ├── OrderTable.js
+│   │   │   └── OrderStatusBadge.js
+│   │   ├── payments/
+│   │   │   ├── PaymentTable.js
+│   │   │   ├── PaymentStatusBadge.js
+│   │   │   └── PaymentSummary.js
+│   │   ├── dashboard/
+│   │   │   ├── StatCard.js
+│   │   │   ├── RecentOrders.js
+│   │   │   └── RecentPayments.js
+│   │   └── ui/
+│   │       ├── Button.js
+│   │       ├── Input.js
+│   │       ├── Select.js
+│   │       ├── Modal.js
+│   │       ├── Table.js
+│   │       ├── Pagination.js
+│   │       ├── Loader.js
+│   │       ├── EmptyState.js
+│   │       ├── ErrorState.js
+│   │       └── ConfirmDialog.js
+│   │
+│   ├── contexts/
+│   │   ├── AuthContext.js
+│   │   └── CartContext.js
+│   │
+│   ├── services/
+│   │   ├── apiClient.js
+│   │   ├── authService.js
+│   │   ├── productService.js
+│   │   ├── cartService.js
+│   │   ├── orderService.js
+│   │   ├── paymentService.js
+│   │   ├── dashboardService.js
+│   │   └── paymentLogService.js
+│   │
+│   ├── hooks/
+│   │   ├── useAuth.js
+│   │   ├── useCart.js
+│   │   ├── usePagination.js
+│   │   └── useDebounce.js
+│   │
+│   ├── utils/
+│   │   ├── formatCurrency.js
+│   │   ├── formatDate.js
+│   │   ├── authStorage.js
+│   │   ├── constants.js
+│   │   └── errorMessage.js
+│   │
+│   ├── config/
+│   │   └── appConfig.js
+│   │
+│   └── styles/
+│
+├── .env.local
+├── .env.example
+├── package.json
+├── next.config.mjs
+├── Dockerfile
+└── README.md
+```
+
+Adapt names to the existing project conventions where required.
+
+Do not duplicate correct existing files.
+
+---
+
+# Environment Variables
+
+Use:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+NEXT_PUBLIC_RAZORPAY_KEY_ID=replace_with_test_key_id
+```
+
+Rules:
+
+* Only `NEXT_PUBLIC_RAZORPAY_KEY_ID` may be available to the browser.
+* Never add Razorpay Key Secret.
+* Never add Razorpay Webhook Secret.
+* Never add database credentials.
+* Never hardcode production URLs.
+* Preserve `.env.example`.
+* Do not commit `.env.local`.
+
+---
+
+# API Client
+
+Reuse or improve the existing Axios client.
+
+The Axios client should:
+
+* Use `NEXT_PUBLIC_API_BASE_URL`.
+* Add the JWT token to authenticated requests.
+* Handle JSON responses.
+* Handle standard API error responses.
+* Handle HTTP 401 consistently.
+* Clear invalid authentication where appropriate.
+* Redirect to login where appropriate.
+* Preserve request ID from error responses.
+* Avoid logging tokens.
+* Avoid infinite interceptor loops.
+* Not assume every error has the same response shape.
+
+Use a reusable error-message helper.
+
+---
+
+# Authentication
+
+Preserve existing:
+
+* Registration
+* Login
+* Logout
+* Profile
+* Auth Context
+* Token persistence
+* Protected dashboard
+
+Verify and improve:
+
+* Loading state while authentication initializes.
+* Safe token storage using the existing project approach.
+* Automatic profile fetch.
+* Logout clears authentication state.
+* Unauthorized API responses clear invalid session.
+* Protected routes redirect unauthenticated users.
+* Role-protected routes restrict Customer and Admin pages.
+* Refreshing a protected page should preserve authentication where possible.
+
+Do not store passwords.
+
+Do not display JWT tokens.
+
+---
+
+# Role-Based Navigation
+
+Roles:
+
+```text
+Admin
+Customer
+```
+
+Customer navigation:
+
+* Dashboard
+* Products
+* Cart
+* Orders
+* Payments
+* Profile
+* Logout
+
+Admin navigation:
+
+* Admin Dashboard
+* Products
+* Orders
+* Payments
+* Payment Logs
+* Profile
+* Logout
+
+Admin should not automatically use customer pages where a separate Admin view exists.
+
+Customer must not see Admin links.
+
+Customer entering an Admin URL manually should receive a safe forbidden state or redirect.
+
+---
+
+# Home Page
+
+Create or improve the home page.
+
+It should include:
+
+* Project name
+* Short description
+* Razorpay Test Mode notice
+* Login and Register actions for unauthenticated users
+* Dashboard action for authenticated users
+* Product browsing action
+* Interview-demo styling
+* Responsive layout
+
+Do not claim real payment processing is active in Part 4.
+
+---
+
+# Product Listing
+
+Page:
+
+```text
+/products
+```
+
+Use:
+
+```text
+GET /api/v1/products
+```
+
+Implement:
+
+* Product cards or table
+* Pagination
+* Search
+* Sort
+* Loading state
+* Empty state
+* Error state
+* Product image fallback
+* Price formatting
+* Active product filtering
+* Product details navigation
+* Add-to-cart action for authenticated Customers
+
+Search should use debouncing where useful.
+
+Do not load all records if pagination exists.
+
+Do not trust frontend price as a final checkout amount.
+
+---
+
+# Product Details
+
+Page:
+
+```text
+/products/[id]
+```
+
+Use:
+
+```text
+GET /api/v1/products/:id
+```
+
+Display:
+
+* Product name
+* SKU
+* Description
+* Price
+* Currency
+* Image
+* Availability
+* Quantity selector
+* Add-to-cart action
+
+Rules:
+
+* Quantity must be positive.
+* Product must be active.
+* Handle product not found.
+* Customer must log in before adding to cart.
+* Admin may view details without Customer cart actions.
+
+---
+
+# Admin Product Management
+
+Pages:
+
+```text
+/admin/products
+/admin/products/create
+/admin/products/[id]/edit
+```
+
+Use:
+
+```text
+GET    /api/v1/products
+POST   /api/v1/products
+PUT    /api/v1/products/:id
+PATCH  /api/v1/products/:id/status
+DELETE /api/v1/products/:id
+```
+
+Implement:
+
+* Admin-only route protection
+* Product table
+* Search
+* Pagination
+* Status filter
+* Create product form
+* Edit product form
+* Activate/deactivate action
+* Soft-delete confirmation
+* Validation errors
+* Success/error toasts
+* Loading states
+* Empty states
+
+Product form fields:
+
+* Name
+* Slug
+* SKU
+* Description
+* Price
+* Currency
+* Image URL
+* Active status
+
+Never send audit fields.
+
+Never send delete fields.
+
+Do not expose internal database fields unnecessarily.
+
+---
+
+# Cart
+
+Page:
+
+```text
+/cart
+```
+
+Use:
+
+```text
+GET    /api/v1/cart
+POST   /api/v1/cart/items
+PATCH  /api/v1/cart/items/:id
+DELETE /api/v1/cart/items/:id
+DELETE /api/v1/cart
+```
+
+Implement:
+
+* Customer-only route
+* Cart item list
+* Product image
+* Product name
+* Unit price
+* Quantity control
+* Line total
+* Cart total
+* Remove action
+* Clear cart action
+* Checkout button
+* Loading state
+* Empty cart state
+* Error handling
+
+Rules:
+
+* Use backend-returned totals.
+* Do not calculate a trusted final amount only in the browser.
+* Prevent quantity below 1.
+* Prevent rapid duplicate submissions.
+* Disable controls while requests are running.
+* Refresh Cart Context after mutations.
+* Display backend validation errors.
+
+---
+
+# Cart Context
+
+Create or extend `CartContext`.
+
+It should manage:
+
+* Cart data
+* Cart item count
+* Cart total
+* Cart loading state
+* Add item
+* Update item
+* Remove item
+* Clear cart
+* Refresh cart
+
+Rules:
+
+* Cart should load only for authenticated Customers.
+* Clear cart state on logout.
+* Avoid duplicate API requests.
+* Avoid stale cart count after mutations.
+* Handle 401 responses safely.
+
+---
+
+# Checkout Preparation
+
+Page:
+
+```text
+/checkout
+```
+
+Part 4 checkout is only frontend preparation.
+
+Implement:
+
+* Customer-only route
+* Current cart summary
+* Backend-returned item totals
+* Backend-returned cart total
+* Currency display
+* Order creation action
+* Test Mode notice
+* Disabled or clearly labeled payment action until Part 5
+* Order creation confirmation
+* Redirect to created order details where appropriate
+
+Use:
+
+```text
+POST /api/v1/orders
+```
+
+Required flow:
+
+```text
+Load Current Cart
+→ Show Trusted Backend Cart Summary
+→ Customer Confirms
+→ Create Application Order
+→ Receive Order Response
+→ Clear Frontend Cart State
+→ Redirect to Order Details
+```
+
+Do not open Razorpay Checkout in Part 4 unless the documentation explicitly requires only a safe placeholder integration.
+
+Do not mark an order paid.
+
+Do not send price, total, user ID, or payment status from the frontend.
+
+---
+
+# Orders
+
+Pages:
+
+```text
+/orders
+/orders/[id]
+```
+
+Use:
+
+```text
+GET /api/v1/orders
+GET /api/v1/orders/:id
+GET /api/v1/orders/:id/items
+```
+
+Implement order list:
+
+* Customer sees own orders
+* Admin may use separate Admin order page
+* Pagination
+* Search by order number
+* Filter by status
+* Filter by payment status
+* Date filters where supported
+* Status badges
+* Payment status badges
+* Empty state
+* Loading state
+* Error state
+
+Order details should display:
+
+* Order number
+* Created date
+* Status
+* Payment status
+* Currency
+* Subtotal
+* Total
+* Order Item snapshots
+* Product name
+* Product SKU
+* Unit price
+* Quantity
+* Line total
+* Available payment summary
+
+Do not expose sensitive payment fields.
+
+---
+
+# Admin Orders
+
+Page:
+
+```text
+/admin/orders
+```
+
+Admin only.
+
+Use:
+
+```text
+GET /api/v1/orders
+PATCH /api/v1/orders/:id/status
+```
+
+Implement:
+
+* All-order table
+* Search
+* Pagination
+* Status filter
+* Payment status filter
+* Date filter
+* Customer information where returned safely
+* Order details action
+* Valid status transition action
+* Confirmation modal
+* Success/error toast
+
+Do not offer invalid status transitions in the UI.
+
+Backend remains the final authority for transitions.
+
+---
+
+# Payment History
+
+Page:
+
+```text
+/payments
+```
+
+Use:
+
+```text
+GET /api/v1/payments/history
+GET /api/v1/payments
+GET /api/v1/payments/:id
+GET /api/v1/orders/:orderId/payments
+```
+
+Customer should see only their own payment history.
+
+Display:
+
+* Order number
+* Provider
+* Amount
+* Currency
+* Status
+* Method
+* Created date
+* Paid date
+* Details action where supported
+
+Do not display:
+
+* Full Razorpay signature
+* Secrets
+* Card numbers
+* CVV
+* Internal metadata
+* Sensitive raw payloads
+
+Empty payment history is valid in Part 4.
+
+---
+
+# Admin Payments
+
+Page:
+
+```text
+/admin/payments
+```
+
+Admin only.
+
+Implement:
+
+* Payment table
+* Pagination
+* Status filter
+* Provider filter
+* Order search
+* Razorpay identifier search where backend supports it
+* Date range
+* Payment details view
+* Safe fields only
+
+Part 4 must not add payment mutation actions.
+
+---
+
+# Payment Logs
+
+Page:
+
+```text
+/admin/payment-logs
+```
+
+Admin only.
+
+Use:
+
+```text
+GET /api/v1/payment-logs
+GET /api/v1/payment-logs/:id
+GET /api/v1/payments/:paymentId/logs
+```
+
+Implement:
+
+* Read-only table
+* Pagination
+* Event type filter
+* Payment filter
+* Order filter
+* Request ID filter
+* Date filter
+* Safe metadata display
+* Details modal where useful
+
+Never display secrets or card data.
+
+---
+
+# Customer Dashboard
+
+Page:
+
+```text
+/dashboard
+```
+
+Use:
+
+```text
+GET /api/v1/dashboard/customer
+```
+
+Display:
+
+* Active cart item count
+* Total orders
+* Pending orders
+* Completed orders
+* Successful payments
+* Failed payments
+* Pending payments
+* Total paid amount
+* Quick links
+* Recent activity where returned
+
+Customer dashboard must use only the authenticated Customer’s data.
+
+---
+
+# Admin Dashboard
+
+Page:
+
+```text
+/admin/dashboard
+```
+
+Use:
+
+```text
+GET /api/v1/dashboard/admin
+```
+
+Display:
+
+* Total active products
+* Total customers
+* Total orders
+* Pending orders
+* Completed orders
+* Cancelled orders
+* Successful payments
+* Failed payments
+* Pending payments
+* Total collected amount
+* Recent orders
+* Recent payments
+
+Use reusable stat cards and tables.
+
+Do not count failed or pending payments as collected revenue.
+
+---
+
+# Profile
+
+Page:
+
+```text
+/profile
+```
+
+Use the existing authenticated profile API.
+
+Display:
+
+* Name
+* Email
+* Role
+* Active status
+* Created date where returned
+
+Do not show password or token.
+
+Do not implement profile update unless the backend supports it.
+
+---
+
+# Payment Success Page Foundation
+
+Page:
+
+```text
+/payment-success
+```
+
+Part 4 should include a safe page foundation only.
+
+Display:
+
+* Success-page layout
+* Order reference if safely provided
+* Button to Orders
+* Button to Payment History
+* Test Mode notice
+
+Do not mark a payment successful based only on URL query parameters.
+
+Do not trust frontend state as payment verification.
+
+Final success routing belongs to Part 5 after backend verification.
+
+---
+
+# Payment Failure Page Foundation
+
+Page:
+
+```text
+/payment-failed
+```
+
+Display:
+
+* Failure message
+* Safe failure reason if returned
+* Order reference where available
+* Retry guidance
+* Button to Orders
+* Button to Cart or Products
+
+Do not expose raw gateway errors.
+
+Do not create new payment records from this page.
+
+---
+
+# Loading, Empty, and Error States
+
+Every data page should include:
+
+* Initial loading state
+* Mutation loading state
+* Empty state
+* API error state
+* Retry action where useful
+* Toast feedback
+* Disabled submit buttons
+* Duplicate-submission prevention
+
+Do not leave blank pages while loading.
+
+Do not show raw stack traces.
+
+---
+
+# Form Validation
+
+Use React Hook Form.
+
+Implement client-side validation for usability, but backend validation remains authoritative.
+
+Validate:
+
+* Required fields
+* Email
+* Password requirements
+* Product name
+* Product slug
+* SKU
+* Price
+* Currency
+* Quantity
+* URL fields
+* Search lengths
+* Pagination values where manually entered
+
+Display field-level backend validation errors where available.
+
+Do not silently ignore API errors.
+
+---
+
+# Pagination
+
+Create a reusable Pagination component.
+
+Support:
+
+* Current page
+* Total pages
+* Previous
+* Next
+* Page numbers where practical
+* Disabled states
+* Query parameter synchronization where useful
+
+Preserve filters and search during page changes.
+
+Do not request invalid page numbers.
+
+---
+
+# Search and Filters
+
+Create reusable search/filter patterns.
+
+Use:
+
+* Debounced search
+* Validated sort fields
+* Validated sort order
+* Status filters
+* Date filters where supported
+* Reset filters action
+
+Avoid sending empty or invalid query values.
+
+---
+
+# Responsive Design
+
+The frontend should work on:
+
+* Desktop
+* Tablet
+* Mobile
+
+Requirements:
+
+* Responsive navigation
+* Mobile menu
+* Responsive cards
+* Horizontally scrollable tables where necessary
+* Accessible form labels
+* Clear buttons
+* Visible focus states
+* Proper spacing
+* Readable font sizes
+* Consistent page width
+
+Do not create a desktop-only layout.
+
+---
+
+# Accessibility
+
+Implement:
+
+* Semantic HTML
+* Form labels
+* Button text
+* Keyboard navigation
+* Focus states
+* Accessible modal behavior where practical
+* `aria-label` where needed
+* Meaningful image alt text
+* Status text in addition to colors
+* Error messages associated with fields
+
+---
+
+# Security Requirements
+
+* Never store or display Razorpay Key Secret.
+* Never store or display Razorpay Webhook Secret.
+* Never store passwords.
+* Never log JWT tokens.
+* Never expose full payment signatures.
+* Never trust frontend totals.
+* Never mark payment success from frontend state.
+* Never allow UI role checks to replace backend authorization.
+* Do not use `dangerouslySetInnerHTML` for API content.
+* Do not render untrusted HTML.
+* Sanitize or safely render user-controlled strings.
+* Use backend responses as the source of truth.
+* Handle 401 and 403 separately.
+
+---
+
+# Frontend Tests
+
+Add meaningful tests using the existing frontend test setup.
+
+If no frontend test framework exists, add a lightweight compatible setup only if appropriate.
+
+Test:
+
+## Authentication
+
+* Login form validation
+* Registration validation
+* Protected route redirect
+* Admin route restriction
+* Logout clears session
+
+## Products
+
+* Product list loading
+* Product list success
+* Product empty state
+* Product API error
+* Admin product form validation
+* Customer cannot access Admin product page
+
+## Cart
+
+* Add item action
+* Quantity update
+* Remove item
+* Clear cart
+* Empty cart
+* Backend total display
+* Duplicate-submit prevention
+
+## Orders
+
+* Order list rendering
+* Order details rendering
+* Empty order state
+* Order API error
+* Admin status action role protection
+
+## Payments
+
+* Empty payment history
+* Payment list rendering
+* Sensitive fields not rendered
+
+## Dashboards
+
+* Customer dashboard data
+* Admin dashboard route protection
+* Loading and error states
+
+Mock backend requests.
+
+Do not call real Razorpay APIs.
+
+Do not require live PostgreSQL for frontend unit tests.
+
+---
+
+# Swagger and Backend Contract Review
+
+Before implementing UI:
+
+1. Inspect Swagger.
+2. Inspect backend route files.
+3. Inspect request and response shapes.
+4. Inspect pagination structure.
+5. Inspect error structure.
+6. Inspect role restrictions.
+7. Inspect ownership rules.
+8. Inspect field names.
+9. Inspect status values.
+10. Inspect whether IDs are numbers or strings.
+
+Do not guess API field names.
+
+If frontend documentation and backend implementation differ, treat the working backend and Swagger as the source of truth and document the mismatch.
+
+Do not change the backend silently.
+
+---
+
+# Documentation
+
+Update or create frontend documentation containing:
+
+* Frontend architecture
+* Route list
+* Customer routes
+* Admin routes
+* Authentication flow
+* Cart flow
+* Order flow
+* Payment history flow
+* Razorpay Test Mode limitation
+* API service structure
+* Environment setup
+* Local run commands
+* Build commands
+* Test commands
+* Known limitations
+* Part 5 readiness
+
+Preserve all existing documentation.
+
+---
+
+# Before Making Changes
+
+1. Open the project root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+2. Run:
+
+```cmd
+git status
+```
+
+3. Inspect the complete repository.
+4. Read both Part 4 files completely.
+5. Inspect the Part 3 backend API documentation.
+6. Inspect Swagger and backend route registration.
+7. Inspect existing frontend:
+
+   * App Router pages
+   * Layout
+   * Auth Context
+   * Axios client
+   * Auth service
+   * Login page
+   * Register page
+   * Dashboard
+   * Tailwind setup
+   * ESLint setup
+   * Existing tests
+8. Confirm Part 1, Part 2, and Part 3 remain working.
+9. Identify pre-existing dirty files.
+10. Summarize the implementation plan.
+11. List files expected to be created or modified.
+12. Identify API contract conflicts before editing.
+13. Do not begin Part 5.
+
+---
+
+# After Implementation
+
+1. List all created files.
+2. List all modified files.
+3. Run frontend lint.
+4. Run frontend tests.
+5. Run frontend production build.
+6. Start the frontend locally.
+7. Start or use the local backend.
+8. Verify the home page.
+9. Verify registration.
+10. Verify login.
+11. Verify logout.
+12. Verify Customer route protection.
+13. Verify Admin route protection.
+14. Verify Product listing.
+15. Verify Product details.
+16. Verify Admin Product CRUD.
+17. Verify Cart.
+18. Verify Checkout preparation.
+19. Verify Order creation.
+20. Verify Order history.
+21. Verify Order details.
+22. Verify Payment history.
+23. Verify Admin Payments.
+24. Verify Payment Logs.
+25. Verify Customer Dashboard.
+26. Verify Admin Dashboard.
+27. Verify Profile.
+28. Verify loading, empty, and error states.
+29. Verify mobile responsiveness.
+30. Verify browser refresh on protected routes.
+31. Verify no sensitive fields are displayed.
+32. Run backend regression tests.
+33. Verify backend health.
+34. Verify Swagger still opens.
+35. Verify Docker Compose configuration remains valid.
+36. Confirm no full Razorpay integration was implemented.
+37. Provide exact Windows CMD commands.
+38. List remaining manual steps.
+39. Do not start Part 5 automatically.
+
+---
+
+# Suggested Verification Commands
+
+Backend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
+
+npm run lint
+npm test
+npm run dev
+```
+
+Frontend:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\frontend
+
+npm install
+npm run lint
+npm test
+npm run build
+npm run dev
+```
+
+If no `npm test` script exists, clearly report it and add a compatible test setup only if it is within the Part 4 scope.
+
+Docker configuration:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+
+docker compose config
+```
+
+Do not use Docker as the only verification method.
+
+Verify local backend and local frontend first.
+
+---
+
+# Manual Browser Verification
+
+Verify:
+
+```text
+http://localhost:3000
+http://localhost:3000/login
+http://localhost:3000/register
+http://localhost:3000/dashboard
+http://localhost:3000/products
+http://localhost:3000/cart
+http://localhost:3000/checkout
+http://localhost:3000/orders
+http://localhost:3000/payments
+http://localhost:3000/profile
+http://localhost:3000/admin/dashboard
+http://localhost:3000/admin/products
+http://localhost:3000/admin/orders
+http://localhost:3000/admin/payments
+http://localhost:3000/admin/payment-logs
+```
+
+Backend:
+
+```text
+http://localhost:5000/api/v1/health
+http://localhost:5000/api-docs/
+```
+
+---
+
+# Final Codex Output Format
+
+Provide the final implementation report using these headings:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Existing Parts 1 to 3 Preservation
+
+## Frontend Architecture
+
+## Routes Created
+
+## Layout and Navigation
+
+## Authentication Integration
+
+## Customer Route Protection
+
+## Admin Route Protection
+
+## API Client
+
+## Frontend Services
+
+## Product Pages
+
+## Admin Product Management
+
+## Cart
+
+## Cart Context
+
+## Checkout Preparation
+
+## Orders
+
+## Admin Orders
+
+## Payment History
+
+## Admin Payments
+
+## Payment Logs
+
+## Customer Dashboard
+
+## Admin Dashboard
+
+## Profile
+
+## Payment Success Foundation
+
+## Payment Failure Foundation
+
+## Forms and Validation
+
+## Search Filtering Sorting and Pagination
+
+## Loading Empty and Error States
+
+## Responsive Design
+
+## Accessibility
+
+## Security Verification
+
+## Frontend Tests
+
+## Backend Regression Check
+
+## Build Results
+
+## Manual Browser Verification
+
+## Docker Configuration Check
+
+## Windows CMD Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Part 5 Readiness
+```
+
+Do not claim that a page, command, test, build, API call, or browser flow passed unless it was actually verified successfully.
+
+If the backend, PostgreSQL, environment variables, browser verification, or dependencies are unavailable, report the affected check as not configured or not verified.
+
+Do not make unrelated changes.
+
+Do not implement full Razorpay integration.
+
+Do not start Part 5.

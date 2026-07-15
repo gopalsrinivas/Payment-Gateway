@@ -1,33 +1,45 @@
+"use client";
+
 import Link from "next/link";
+import Button from "../components/ui/Button";
+import { useAuth } from "../contexts/AuthContext";
+import { getRoleName } from "../utils/auth";
 
 export default function HomePage() {
+  const { isAuthenticated, user } = useAuth();
+
   return (
-    <section className="grid gap-6 py-8 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+    <section className="grid gap-8 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-brand">Part 1 Foundation</p>
-        <h1 className="mt-3 text-4xl font-bold text-ink sm:text-5xl">Payment Gateway Demo</h1>
+        <p className="text-sm font-semibold uppercase text-brand">Razorpay Test Mode</p>
+        <h1 className="mt-3 text-4xl font-bold text-ink sm:text-5xl">Payment Gateway</h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-          Register, log in, and access a protected dashboard while the backend stays ready for later Razorpay test-mode payment work.
+          Browse products, manage a cart, create trusted application orders, and review payment history through the Part 3 backend APIs.
+          Full Razorpay processing is intentionally reserved for the next phase.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link className="rounded-md bg-brand px-4 py-2 font-medium text-white hover:bg-teal-800" href="/register">
-            Create account
-          </Link>
-          <Link className="rounded-md border border-slate-300 px-4 py-2 font-medium text-slate-800 hover:bg-white" href="/login">
-            Sign in
-          </Link>
+          <Button as={Link} href="/products">Browse products</Button>
+          {isAuthenticated ? (
+            <Button as={Link} href={getRoleName(user) === "Admin" ? "/admin/dashboard" : "/dashboard"} variant="secondary">
+              Open dashboard
+            </Button>
+          ) : (
+            <>
+              <Button as={Link} href="/login" variant="secondary">Sign in</Button>
+              <Button as={Link} href="/register" variant="ghost">Register</Button>
+            </>
+          )}
         </div>
       </div>
-      <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Included now</h2>
+      <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-ink">Part 4 frontend scope</h2>
         <ul className="mt-4 space-y-3 text-sm text-slate-600">
-          <li>JWT authentication</li>
-          <li>Role-aware profile data</li>
-          <li>Backend Razorpay SDK configuration foundation</li>
-          <li>Webhook raw-body foundation</li>
+          <li>Role-aware Customer and Admin navigation</li>
+          <li>Product, cart, checkout preparation, orders, and payments UI</li>
+          <li>Backend-trusted totals and protected API calls</li>
+          <li>Payment success/failure page foundation without frontend verification claims</li>
         </ul>
       </div>
     </section>
   );
 }
-

@@ -1,11 +1,12 @@
 import { Toaster } from "react-hot-toast";
 import AppShell from "../components/layout/AppShell";
 import { AuthProvider } from "../contexts/AuthContext";
+import { CartProvider } from "../contexts/CartContext";
 import "../styles/globals.css";
 
 export const metadata = {
-  title: "Payment Gateway Demo",
-  description: "Part 1 auth foundation for a Razorpay test-mode demo",
+  title: "Payment Gateway",
+  description: "Frontend for a Razorpay test-mode payment gateway",
 };
 
 export default function RootLayout({ children }) {
@@ -13,11 +14,12 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <AppShell>{children}</AppShell>
+          <CartProvider>
+            <AppShell>{children}</AppShell>
+          </CartProvider>
           <Toaster position="top-right" />
         </AuthProvider>
       </body>
     </html>
   );
 }
-

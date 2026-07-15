@@ -7,8 +7,8 @@ const { buildPagination, getPagination } = require("../utils/pagination");
 const { buildDateRange, getSafeOrder } = require("../utils/queryHelpers");
 
 const includeOrder = [
-  { model: OrderItem, as: "items" },
-  { model: Payment, as: "payments", attributes: { exclude: ["razorpay_signature"] } },
+  { model: OrderItem, as: "items", required: false },
+  { model: Payment, as: "payments", attributes: { exclude: ["razorpay_signature"] }, required: false },
 ];
 
 const createOrder = async ({ userId, notes }) =>
