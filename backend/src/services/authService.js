@@ -13,7 +13,7 @@ const sanitizeUser = (user) => {
 
 const register = async ({ name, email, password }) => {
   const normalizedEmail = email.toLowerCase();
-  const existingUser = await User.unscoped().findOne({ where: { email: normalizedEmail } });
+  const existingUser = await User.unscoped().findOne({ where: { email: normalizedEmail, is_deleted: false } });
   if (existingUser) {
     throw new AppError("Email is already registered", 409);
   }
@@ -73,4 +73,3 @@ const getProfile = async (userId) => {
 };
 
 module.exports = { register, login, getProfile };
-

@@ -41,8 +41,25 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: true,
       },
+      last_login_at: {
+        type: DataTypes.DATE,
+      },
+      created_by: {
+        type: DataTypes.BIGINT,
+      },
+      updated_by: {
+        type: DataTypes.BIGINT,
+      },
+      is_deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       deleted_at: {
         type: DataTypes.DATE,
+      },
+      deleted_by: {
+        type: DataTypes.BIGINT,
       },
     },
     {
@@ -50,13 +67,17 @@ module.exports = (sequelize) => {
       modelName: "User",
       tableName: "users",
       underscored: true,
-      paranoid: true,
-      deletedAt: "deleted_at",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      paranoid: false,
       defaultScope: {
+        where: { is_deleted: false },
         attributes: { exclude: ["password"] },
       },
       scopes: {
         withPassword: {
+          where: { is_deleted: false },
           attributes: {},
         },
       },
@@ -65,4 +86,3 @@ module.exports = (sequelize) => {
 
   return User;
 };
-

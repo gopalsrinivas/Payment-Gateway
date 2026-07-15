@@ -1335,3 +1335,766 @@ Part 2 will contain:
 * Sequelize Models
 * Sequelize Migrations
 * Database Acceptance Criteria
+
+
+Part-2:
+--------
+
+Read these files completely before making any changes:
+
+1. `docs/Part-2-Database-Design-Payment-Gateway.md`
+2. `docs/Codex-Prompt-Part-2-Database-Design-Payment-Gateway.md`
+
+Continue from the existing Part 1 implementation.
+
+Implement ONLY Part 2: database design, Sequelize models, migrations, associations, indexes, constraints, audit fields, soft delete support, and seed data.
+
+Project root:
+
+```text
+D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+Do not create another nested project folder.
+
+Requirements:
+
+* Do not recreate or overwrite correct existing Part 1 migrations, models, seeders, authentication files, database configuration, Docker files, Swagger configuration, or frontend files.
+* Preserve the existing `roles` and `users` tables and their working authentication flow.
+* Do not duplicate existing `roles` or `users` migrations.
+* Extend the existing schema safely using new migrations where required.
+* Reuse the existing Sequelize naming conventions and model structure.
+* Do not generate backend business APIs yet.
+* Do not generate frontend pages yet.
+* Do not implement Razorpay API calls, Checkout, signature verification, webhook event processing, payment history APIs, or refunds.
+* Do not use `sequelize.sync()` or `sequelize.sync({ alter: true })`.
+* Use Sequelize migrations and seeders only.
+* Do not modify the database schema outside the documented Part 2 scope.
+* If a real implementation conflict requires a schema change, explain the issue before changing it.
+
+Implement database support for:
+
+* Roles
+* Users
+* Products
+* Cart Items
+* Orders
+* Order Items
+* Payments
+* Payment Logs
+* Webhook Events
+
+Implement or safely extend the following Sequelize models:
+
+* `Role`
+* `User`
+* `Product`
+* `CartItem`
+* `Order`
+* `OrderItem`
+* `Payment`
+* `PaymentLog`
+* `WebhookEvent`
+
+Implement model associations:
+
+* Role has many Users
+* User belongs to Role
+* User has many Cart Items
+* Cart Item belongs to User
+* Product has many Cart Items
+* Cart Item belongs to Product
+* User has many Orders
+* Order belongs to User
+* Order has many Order Items
+* Order Item belongs to Order
+* Product has many Order Items
+* Order Item belongs to Product
+* Order has many Payments
+* Payment belongs to Order
+* User has many Payments where applicable
+* Payment belongs to User where applicable
+* Payment has many Payment Logs
+* Payment Log belongs to Payment
+* Order may have many Payment Logs where useful
+* Webhook Event may reference Payment and Order where applicable
+
+Use this database flow:
+
+```text
+Sequelize Migration
+→ PostgreSQL Table
+→ Sequelize Model
+→ Model Association
+→ Seeder
+→ Database Verification
+```
+
+## Common Audit and Soft Delete Fields
+
+Add these fields to all applicable business tables:
+
+```text
+created_at
+created_by
+updated_at
+updated_by
+is_deleted
+deleted_at
+deleted_by
+```
+
+Rules:
+
+* `created_at` should default to the current timestamp.
+* `updated_at` should update when the record changes.
+* `created_by`, `updated_by`, and `deleted_by` should reference `users.id` where appropriate.
+* Audit user foreign keys must allow `NULL` for system-created data and seed data.
+* `is_deleted` should default to `false`.
+* `deleted_at` and `deleted_by` should remain `NULL` until soft deletion.
+* Do not physically delete business records where soft delete is required.
+* Existing Part 1 authentication must continue to work after adding audit columns.
+* Do not introduce circular migration failures through audit foreign keys.
+* If necessary, add audit foreign keys in separate migrations after core tables exist.
+
+## Roles Table
+
+Preserve the existing table.
+
+Verify or extend safely with:
+
+* `id`
+* `name`
+* `description`
+* `is_active`
+* audit fields
+* soft delete fields
+
+Constraints:
+
+* Role name must be unique among active/non-deleted roles.
+* Seeded roles must remain:
+
+  * Admin
+  * Customer
+
+Do not create duplicate roles.
+
+## Users Table
+
+Preserve the existing table and authentication-compatible fields.
+
+Verify or extend safely with:
+
+* `id`
+* `name`
+* `email`
+* `password`
+* `role_id`
+* `is_active`
+* audit fields
+* soft delete fields
+
+Constraints:
+
+* Email must be unique.
+* Role foreign key must reference `roles.id`.
+* Password must remain compatible with existing authentication.
+* Existing local Admin login must continue to work.
+* Do not return or log password values.
+* Do not change existing password hashing behavior.
+
+## Products Table
+
+Create fields such as:
+
+* `id`
+* `name`
+* `slug`
+* `description`
+* `sku`
+* `price`
+* `currency`
+* `image_url`
+* `is_active`
+* audit fields
+* soft delete fields
+
+Constraints:
+
+* Product name required.
+* Slug unique.
+* SKU unique where provided.
+* Price must be greater than or equal to zero.
+* Currency should default to `INR`.
+* Use a precise decimal type for product price.
+* Do not store floating-point currency values.
+* Product soft delete should not remove historical order item data.
+
+Indexes:
+
+* Product slug
+* Product SKU
+* Product name
+* `is_active`
+* `is_deleted`
+* Composite indexes useful for active product listing
+
+## Cart Items Table
+
+Create fields such as:
+
+* `id`
+* `user_id`
+* `product_id`
+* `quantity`
+* audit fields
+* soft delete fields
+
+Constraints:
+
+* User foreign key required.
+* Product foreign key required.
+* Quantity must be greater than zero.
+* Prevent duplicate active cart rows for the same user and product.
+* Use a unique composite constraint or partial unique index where supported.
+
+Indexes:
+
+* `user_id`
+* `product_id`
+* Composite index on `user_id`, `is_deleted`
+* Composite uniqueness for active cart items
+
+## Orders Table
+
+Create fields such as:
+
+* `id`
+* `order_number`
+* `user_id`
+* `subtotal_amount`
+* `total_amount`
+* `currency`
+* `status`
+* `payment_status`
+* `notes`
+* audit fields
+* soft delete fields
+
+Recommended order statuses:
+
+```text
+PENDING
+CONFIRMED
+PROCESSING
+COMPLETED
+CANCELLED
+FAILED
+```
+
+Recommended payment statuses:
+
+```text
+PENDING
+AUTHORIZED
+PAID
+FAILED
+REFUNDED
+PARTIALLY_REFUNDED
+```
+
+Constraints:
+
+* Order number must be unique.
+* User foreign key required.
+* Amounts must be greater than or equal to zero.
+* Currency should default to `INR`.
+* Status fields should use ENUMs or validated strings consistently.
+* Orders should normally be preserved for audit and not physically deleted.
+
+Indexes:
+
+* `order_number`
+* `user_id`
+* `status`
+* `payment_status`
+* `created_at`
+* Composite index for user order history
+* Composite index for admin status filtering
+
+## Order Items Table
+
+Create fields such as:
+
+* `id`
+* `order_id`
+* `product_id`
+* `product_name`
+* `product_sku`
+* `unit_price`
+* `quantity`
+* `line_total`
+* audit fields
+* soft delete fields where applicable
+
+Rules:
+
+* Store product snapshot values such as name, SKU, and unit price.
+* Historical order items must not depend only on current product values.
+* Quantity must be greater than zero.
+* Unit price and line total must be greater than or equal to zero.
+* Order foreign key required.
+* Product foreign key may use `RESTRICT` or `SET NULL` based on documented design.
+* Do not cascade-delete historical order items when a product is soft-deleted.
+
+Indexes:
+
+* `order_id`
+* `product_id`
+* Composite index on `order_id`, `product_id`
+
+## Payments Table
+
+Create fields such as:
+
+* `id`
+* `order_id`
+* `user_id`
+* `provider`
+* `razorpay_order_id`
+* `razorpay_payment_id`
+* `razorpay_signature`
+* `amount`
+* `currency`
+* `status`
+* `method`
+* `failure_code`
+* `failure_description`
+* `paid_at`
+* `verified_at`
+* audit fields
+* soft delete fields
+
+Recommended statuses:
+
+```text
+CREATED
+PENDING
+AUTHORIZED
+CAPTURED
+FAILED
+REFUNDED
+PARTIALLY_REFUNDED
+```
+
+Requirements:
+
+* Provider should default to `RAZORPAY`.
+* `razorpay_order_id` should be indexed.
+* `razorpay_payment_id` should be unique when present.
+* Do not store card number, CVV, full card details, or banking credentials.
+* Do not store secrets.
+* Signature may be stored only if required for audit and must never be logged.
+* Amount should use the documented currency representation consistently.
+* Prevent duplicate payment processing using unique constraints and idempotency-friendly indexes.
+
+Indexes:
+
+* `order_id`
+* `user_id`
+* `razorpay_order_id`
+* Unique `razorpay_payment_id`
+* `status`
+* `created_at`
+
+## Payment Logs Table
+
+Create fields such as:
+
+* `id`
+* `payment_id`
+* `order_id`
+* `event_type`
+* `previous_status`
+* `new_status`
+* `message`
+* `request_id`
+* `metadata`
+* audit fields
+
+Requirements:
+
+* Use PostgreSQL `JSONB` for metadata where appropriate.
+* Do not store secrets, passwords, JWT tokens, card data, or webhook secrets.
+* Logs should support payment troubleshooting and status transition history.
+* Payment log records should generally not be soft-deleted.
+* If the common audit pattern is required, keep deletion fields nullable and avoid deleting audit history.
+
+Indexes:
+
+* `payment_id`
+* `order_id`
+* `event_type`
+* `request_id`
+* `created_at`
+
+## Webhook Events Table
+
+Create fields such as:
+
+* `id`
+* `provider`
+* `event_id`
+* `event_type`
+* `entity_type`
+* `razorpay_order_id`
+* `razorpay_payment_id`
+* `payload`
+* `signature`
+* `signature_verified`
+* `processing_status`
+* `processed_at`
+* `error_message`
+* `retry_count`
+* audit fields
+
+Recommended processing statuses:
+
+```text
+RECEIVED
+VERIFIED
+PROCESSING
+PROCESSED
+FAILED
+IGNORED
+```
+
+Requirements:
+
+* Use `JSONB` for payload.
+* `event_id` should be unique when Razorpay provides a reliable event ID.
+* When no event ID is available, support an idempotency key or payload hash strategy.
+* Prevent duplicate webhook processing.
+* Signature verification will be implemented later, but schema must support it.
+* Do not log or expose the webhook secret.
+* Store only data necessary for audit and troubleshooting.
+
+Indexes:
+
+* `event_id`
+* `event_type`
+* `razorpay_order_id`
+* `razorpay_payment_id`
+* `processing_status`
+* `created_at`
+
+## Foreign Key Rules
+
+Use intentional foreign key actions.
+
+Examples:
+
+* Role deletion should not orphan Users.
+* User deletion should not physically delete Orders or Payments.
+* Product deletion should not delete Order Items.
+* Order deletion should normally be restricted or handled as soft delete.
+* Order Items should remain available for historical records.
+* Payment Logs and Webhook Events should remain available for audit.
+* Use `CASCADE`, `RESTRICT`, `SET NULL`, or `NO ACTION` only after considering historical data preservation.
+
+Document every non-default foreign key action.
+
+## Constraints
+
+Implement appropriate:
+
+* Primary keys
+* Foreign keys
+* Unique constraints
+* Not-null constraints
+* Check constraints
+* Default values
+* ENUMs or validated status strings
+* Composite unique constraints
+* Currency amount checks
+* Positive quantity checks
+* Soft-delete-aware uniqueness where practical
+
+Do not rely only on API validation.
+
+Important business constraints should also exist at the database level.
+
+## Indexes
+
+Add indexes for:
+
+* Foreign key columns
+* Frequently searched fields
+* Unique provider identifiers
+* Order history
+* Payment history
+* Product listing
+* Status filters
+* Created date filters
+* Soft-delete filters
+* Webhook duplicate detection
+
+Avoid unnecessary indexes.
+
+Explain each composite or partial index.
+
+## Seed Data
+
+Preserve existing:
+
+* Admin role
+* Customer role
+* Local Admin user
+
+Add safe development seed data for:
+
+* Sample products
+* Optional sample customer user
+* Optional cart items only if they do not interfere with tests
+* Optional sample orders and payments only if explicitly required by the Part 2 document
+
+Rules:
+
+* Use clearly fake development data.
+* Do not use real personal information.
+* Do not use real Razorpay credentials or transaction IDs.
+* Seeders should be safe to run in the documented environment.
+* Avoid duplicate seed data.
+* Do not break existing authentication tests.
+
+## Model Requirements
+
+Each Sequelize model should:
+
+* Use the correct table name.
+* Use snake_case database columns where consistent with the project.
+* Use existing timestamp conventions.
+* Configure soft delete consistently.
+* Expose associations through `models/index.js`.
+* Avoid duplicate association registration.
+* Exclude sensitive fields where appropriate.
+* Match the migrations exactly.
+* Avoid hidden automatic schema changes.
+
+## Migration Requirements
+
+Migrations should:
+
+* Run in dependency-safe order.
+* Be reversible where practical.
+* Preserve existing data.
+* Avoid dropping working Part 1 tables.
+* Avoid recreating `roles` and `users`.
+* Add audit columns to existing tables through alter migrations.
+* Create new tables in correct foreign key order.
+* Create audit foreign keys only after required tables exist.
+* Add indexes and constraints explicitly.
+* Include safe `down` methods.
+* Avoid destructive changes.
+
+## Tests
+
+Add meaningful database-focused tests for:
+
+* Models load successfully.
+* Associations are configured.
+* Required fields reject invalid data.
+* Unique constraints work.
+* Check constraints work.
+* Product price validation.
+* Cart quantity validation.
+* Duplicate cart item prevention.
+* Order number uniqueness.
+* Payment identifier uniqueness.
+* Soft delete behavior.
+* Audit field behavior where testable.
+* Existing registration and login tests still pass.
+
+Do not add Part 3 API tests yet.
+
+## Documentation
+
+Update or create documentation for:
+
+* Complete table list
+* ER relationships
+* Audit fields
+* Soft delete strategy
+* Foreign key actions
+* Constraints
+* Indexes
+* Seed data
+* Migration order
+* Database reset commands
+* Local PostgreSQL commands
+* Known limitations
+* Part 3 readiness
+
+Do not remove existing Part 1 documentation.
+
+## Before Making Changes
+
+1. Open the project root:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway
+```
+
+2. Run `git status`.
+3. Inspect the complete current repository.
+4. Read both Part 2 documents completely.
+5. Inspect existing:
+
+   * migrations
+   * models
+   * model associations
+   * seeders
+   * database configuration
+   * authentication service
+   * authentication tests
+   * Docker configuration
+6. Verify the current Part 1 migrations and seed data.
+7. Summarize the implementation plan.
+8. List files expected to be created or modified.
+9. Identify migration conflicts before editing.
+10. Do not begin Part 3.
+
+## After Implementation
+
+1. List all created files.
+2. List all modified files.
+3. Run backend lint.
+4. Run backend tests.
+5. Run migrations.
+6. Run seeders.
+7. Check migration status.
+8. Verify all tables exist.
+9. Verify foreign keys.
+10. Verify indexes.
+11. Verify unique and check constraints.
+12. Verify seeded roles and Admin user remain valid.
+13. Verify sample products where seeded.
+14. Verify existing register API.
+15. Verify existing login API.
+16. Verify existing profile API.
+17. Confirm passwords and secrets are not exposed.
+18. Confirm the frontend still builds.
+19. Confirm Docker Compose remains valid.
+20. Confirm no Part 3 backend business APIs were implemented.
+21. Provide exact Windows CMD commands.
+22. List remaining manual steps.
+23. Do not start Part 3 automatically.
+
+## Verification Commands
+
+Run the applicable commands from the project root or backend folder:
+
+```cmd
+cd /d D:\Workspace\professional\Interview_Tasks\Orfus\Payment-Gateway\backend
+
+npm run lint
+npm test
+npm run db:migrate
+npm run db:migrate:status
+npm run db:seed
+```
+
+Verify PostgreSQL schema using commands such as:
+
+```cmd
+psql -U gopal -h localhost -p 5432 -d payment_gateway_demo
+```
+
+Then verify:
+
+```sql
+\dt
+
+SELECT * FROM "SequelizeMeta" ORDER BY name;
+
+SELECT id, name FROM roles ORDER BY id;
+
+SELECT id, name, email, role_id, is_active
+FROM users
+ORDER BY id;
+
+SELECT id, name, sku, price, currency, is_active
+FROM products
+ORDER BY id;
+```
+
+Also inspect constraints and indexes using PostgreSQL metadata queries.
+
+Do not expose passwords in the final report.
+
+## Final Output Format
+
+Provide the final implementation report using these headings:
+
+```text
+## Summary
+
+## Repository Inspection
+
+## Implementation Plan
+
+## Files Created
+
+## Files Modified
+
+## Existing Part 1 Preservation
+
+## Database Design
+
+## Tables Created
+
+## Tables Extended
+
+## Sequelize Models
+
+## Model Associations
+
+## Migrations
+
+## Audit Fields
+
+## Soft Delete
+
+## Constraints
+
+## Indexes
+
+## Foreign Key Actions
+
+## Seed Data
+
+## Tests
+
+## Verification Results
+
+## Existing Authentication Regression Check
+
+## Security Verification
+
+## Windows CMD Commands
+
+## Remaining Manual Steps
+
+## Known Limitations
+
+## Part 3 Readiness
+```
+
+Do not claim that a command passed unless it was actually executed successfully.
+
+When PostgreSQL, environment variables, dependencies, or services are unavailable, clearly report the affected check as not configured or not verified.
+
+Do not make unrelated changes.
+
+Do not start Part 3.

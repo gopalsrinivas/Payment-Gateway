@@ -9,6 +9,7 @@
     "lint": "eslint src tests",
     "test": "node --test",
     "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:seed": "sequelize-cli db:seed:all",
     "db:migrate:undo": "sequelize-cli db:migrate:undo"
   },
@@ -39,4 +40,3 @@
     "supertest": "^7.0.0"
   }
 }
-
