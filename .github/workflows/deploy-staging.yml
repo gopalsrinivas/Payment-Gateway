@@ -18,7 +18,7 @@ jobs:
       STAGING_HOST: ${{ secrets.STAGING_HOST }}
       STAGING_USER: ${{ secrets.STAGING_USER }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check deployment configuration
         run: |
           if [ -z "$STAGING_HOST" ] || [ -z "$STAGING_USER" ]; then

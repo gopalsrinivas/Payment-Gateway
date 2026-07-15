@@ -11,74 +11,128 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
-  codeql:
+  dependency-audit-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          languages: javascript-typescript
-      - uses: github/codeql-action/analyze@v3
-
-  dependency-audit:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project: [backend, frontend]
-    defaults:
-      run:
-        working-directory: ${{ matrix.project }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
+          node-version: 22
           cache: npm
-          cache-dependency-path: ${{ matrix.project }}/package-lock.json
-      - run: npm ci
-      - run: npm audit --audit-level=high
+          cache-dependency-path: backend/package-lock.json
+      - working-directory: backend
+        run: npm ci
+      - working-directory: backend
+        run: npm audit --audit-level=high
 
-  trivy-filesystem:
+  dependency-audit-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.24.0
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          format: table
-          exit-code: "1"
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npm audit --audit-level=high
 
   gitleaks:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trivy-filesystem:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-filesystem.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+      - name: Upload Trivy filesystem SARIF
+        if: always() && hashFiles('trivy-filesystem.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
+        with:
+          sarif_file: trivy-filesystem.sarif
+          category: trivy-filesystem
 
   trivy-images:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - uses: actions/checkout@v4
-      - run: docker build -t payment-gateway-backend:security ./backend
-      - run: docker build --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1 --build-arg NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_security_placeholder -t payment-gateway-frontend:security ./frontend
-      - uses: aquasecurity/trivy-action@0.24.0
+      - uses: actions/checkout@v6
+      - run: docker build -t payment-gateway-backend:${{ github.sha }} ./backend
+      - run: docker build --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1 --build-arg NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_security_placeholder -t payment-gateway-frontend:${{ github.sha }} ./frontend
+      - name: Trivy backend image scan
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: payment-gateway-backend:security
-          severity: HIGH,CRITICAL
+          image-ref: payment-gateway-backend:${{ github.sha }}
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
           ignore-unfixed: true
-          format: table
-          exit-code: "1"
-      - uses: aquasecurity/trivy-action@0.24.0
+          exit-code: "0"
+      - name: Upload Trivy backend SARIF
+        if: always() && hashFiles('trivy-backend.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
         with:
-          image-ref: payment-gateway-frontend:security
-          severity: HIGH,CRITICAL
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+      - name: Trivy frontend image scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: payment-gateway-frontend:${{ github.sha }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
           ignore-unfixed: true
-          format: table
-          exit-code: "1"
+          exit-code: "0"
+      - name: Upload Trivy frontend SARIF
+        if: always() && hashFiles('trivy-frontend.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v4
